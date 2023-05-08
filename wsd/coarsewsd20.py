@@ -78,12 +78,16 @@ class WordDataset:
     _ENTRIES_FILE_TEMPLATE = '{split}.data.txt'
     _LABELS_FILE_TEMPLATE = '{split}.gold.txt'
 
+    variant: Variant = None
+    word: Word = None
     path: Path = None
     classes: Dict[str, str] = None
     train: List[Entry] = None
     test: List[Entry] = None
 
     def __init__(self, variant: Variant, word: Word):
+        self.variant = variant
+        self.word = word
         self.path = self._path(variant, word)
 
         if not self.path.exists():
