@@ -174,7 +174,6 @@ class WordDataset:
 class WordNetMapping:
     """A mapping from CoarseWSD-20 senses to WordNet synsets.
     """
-
     word: str
     sense: str
     synset_offset: str
