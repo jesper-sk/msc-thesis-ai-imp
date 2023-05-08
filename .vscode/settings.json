@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
-        "coarsewsd"
+        "coarsewsd",
+        "nshot"
     ],
     "[python]": {
         "editor.formatOnSave": true,
