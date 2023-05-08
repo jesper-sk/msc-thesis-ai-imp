@@ -3,6 +3,7 @@
         "coarsewsd",
         "nshot",
         "outofdomain",
+        "pretrained",
         "synset",
         "synsets"
     ],
