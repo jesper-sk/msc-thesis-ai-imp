@@ -3,7 +3,7 @@ import typing
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Mapping, Tuple
+from typing import Dict, List, Literal, Tuple
 
 Word = Literal['apple', 'arm', 'bank', 'bass', 'bow', 'chair', 'club',
                'crane', 'deck', 'digit', 'hood', 'java', 'mole',
@@ -11,8 +11,10 @@ Word = Literal['apple', 'arm', 'bank', 'bass', 'bow', 'chair', 'club',
                'yard']
 Split = Literal['train', 'test']
 
-DATA_ROOT: Path = Path('data/CoarseWSD-20')
 WORDS: Tuple = typing.get_args(Word)
+DATA_ROOT: Path = Path('../data/CoarseWSD-20')
+WORDNET_MAPPINGS_PATH = DATA_ROOT / 'wn_mappings.tsv'
+OUT_OF_DOMAIN_DATA_PATH = DATA_ROOT / 'CoarseWSD-20.outofdomain.tsv'
 
 
 class Variant(Enum):
@@ -66,6 +68,16 @@ class Entry:
     target_class_index: int
 
 
+@dataclass
+class OutOfDomainEntry:
+    """A single entry in the CoarseWSD20 out-of-domain dataset.
+    """
+    tokens: List[str]
+    target_word: str
+    target_index: int
+    target_class: str
+
+
 class WordDataset:
     """A CoarseWSD20-variant dataset for a single word. 
 
@@ -85,10 +97,10 @@ class WordDataset:
     train: List[Entry] = None
     test: List[Entry] = None
 
-    def __init__(self, variant: Variant, word: Word):
+    def __init__(self, root: Path, variant: Variant, word: Word):
         self.variant = variant
         self.word = word
-        self.path = self._path(variant, word)
+        self.path = self._path(root, variant, word)
 
         if not self.path.exists():
             raise ValueError(
@@ -105,7 +117,7 @@ class WordDataset:
         self.test = self._load_data('test')
 
     @staticmethod
-    def exists(variant: Variant, word: Word) -> bool:
+    def exists(root: Path, variant: Variant, word: Word) -> bool:
         """Checks if the dataset for the given word and variant exists.
 
         Parameters
@@ -120,11 +132,11 @@ class WordDataset:
         bool
             True if the dataset exists, False otherwise.
         """
-        return WordDataset._path(variant, word).exists()
+        return WordDataset._path(root, variant, word).exists()
 
     @staticmethod
-    def _path(variant: Variant, word: Word) -> Path:
-        return DATA_ROOT / variant.for_word(word)
+    def _path(root: Path, variant: Variant, word: Word) -> Path:
+        return root / variant.for_word(word)
 
     def _load_classes(self) -> Dict[str, str]:
         with open(self.path / self._CLASSES_FILE, 'r', encoding='utf-8') as file:
@@ -158,22 +170,52 @@ class WordDataset:
         return entries
 
 
-class FullDataset(Mapping[Word, WordDataset]):
-    """A CoarseWSD20-variant dataset for all words.
+@dataclass
+class WordNetMapping:
+    """A mapping from CoarseWSD-20 senses to WordNet synsets.
     """
-    _data: Dict[Word, WordDataset] = None
 
-    def __init__(self, variant: Variant):
-        self._data = {
-            word: WordDataset(variant, word) for word in WORDS
-            if WordDataset.exists(variant, word)
+    word: str
+    sense: str
+    synset_offset: str
+    synset: str
+    sense_key: str
+
+
+def load_dataset(
+    variant: Variant,
+    root: str | Path = DATA_ROOT
+) -> Dict[Word, WordDataset]:
+    root = Path(root)
+    return {
+        word: WordDataset(root, variant, word) for word in WORDS
+        if WordDataset.exists(root, variant, word)
+    }
+
+
+def load_wordnet_mappings(
+    path: str | Path = WORDNET_MAPPINGS_PATH
+) -> Dict[str, WordNetMapping]:
+    with open(Path(path), 'r', encoding='utf-8') as file:
+        next(file)  # skip header
+        return {
+            mapping.sense: mapping
+            for mapping in (
+                WordNetMapping(*line.strip().split('\t'))
+                for line in file
+            )
         }
 
-    def __len__(self) -> int:
-        return len(self._data)
 
-    def __getitem__(self, key: Word) -> WordDataset:
-        return self._data[key]
+def load_out_of_domain_data(
+    path: str | Path = OUT_OF_DOMAIN_DATA_PATH
+) -> List[OutOfDomainEntry]:
+    with open(Path(path), 'r', encoding='utf-8') as file:
+        entries = []
+        for line in file:
+            word, sense, index, tokens = line.strip().split('\t')
+            tokens = tokens.split()
+            index = int(index)
+            entries.append(OutOfDomainEntry(tokens, word, index, sense))
 
-    def __iter__(self) -> Any:
-        return iter(self._data)
+        return entries

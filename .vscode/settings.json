@@ -1,7 +1,10 @@
 {
     "cSpell.words": [
         "coarsewsd",
-        "nshot"
+        "nshot",
+        "outofdomain",
+        "synset",
+        "synsets"
     ],
     "[python]": {
         "editor.formatOnSave": true,
