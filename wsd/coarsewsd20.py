@@ -100,7 +100,7 @@ class WordDataset:
 
     Raises
     ------
-    ValueError
+    `ValueError`
         When the dataset for the given word and variant doesn't exist.
     """
 
@@ -108,17 +108,10 @@ class WordDataset:
     _ENTRIES_FILE_TEMPLATE = "{split}.data.txt"
     _LABELS_FILE_TEMPLATE = "{split}.gold.txt"
 
-    variant: Variant = None
-    word: Word = None
-    path: Path = None
-    classes: dict[str, str] = None
-    train: list[Entry] = None
-    test: list[Entry] = None
-
     def __init__(self, root: Path, variant: Variant, word: Word):
-        self.variant = variant
-        self.word = word
-        self.path = self._path(root, variant, word)
+        self.variant: Variant = variant
+        self.word: Word = word
+        self.path: Path = self._path(root, variant, word)
 
         if not self.path.exists():
             raise ValueError(f"Can't find dataset '{word}' for variant {variant.value}")
@@ -127,9 +120,9 @@ class WordDataset:
 
     def load(self):
         """Loads the dataset from disk."""
-        self.classes = self._load_classes()
-        self.train = self._load_data("train")
-        self.test = self._load_data("test")
+        self.classes: dict[str, str] = self._load_classes()
+        self.train: list[Entry] = self._load_data("train")
+        self.test: list[Entry] = self._load_data("test")
 
     @staticmethod
     def exists(root: Path, variant: Variant, word: Word) -> bool:
@@ -137,14 +130,14 @@ class WordDataset:
 
         Parameters
         ----------
-        variant : Variant
+        `variant : Variant`
             The variant to check for.
-        word : Word
+        `word : Word`
             The word to check for.
 
         Returns
         -------
-        bool
+        `bool`
             True if the dataset exists, False otherwise.
         """
         return WordDataset._path(root, variant, word).exists()
@@ -180,6 +173,36 @@ class WordDataset:
 
         return entries
 
+    def tokens(self, split: Split) -> list[list[str]]:
+        """Returns the tokens for the given split.
+
+        Parameters
+        ----------
+        `split : Split`
+            The split to get the tokens for.
+
+        Returns
+        -------
+        `list[list[str]]`
+            The tokens for the given split.
+        """
+        return [entry.tokens for entry in self.split(split)]
+
+    def split(self, split) -> list[Entry]:
+        """Returns the entries for the given split.
+
+        Parameters
+        ----------
+        `split : Split`
+            The split to get the entries for.
+
+        Returns
+        -------
+        `list[Entry]`
+            The entries for the given split.
+        """
+        return getattr(self, split)
+
 
 @dataclass
 class WordNetMapping:
@@ -195,6 +218,20 @@ class WordNetMapping:
 def load_dataset(
     variant: Variant, root: str | Path = DATA_ROOT
 ) -> dict[Word, WordDataset]:
+    """Loads the CoarseWSD20-variant datasets for all words.
+
+    Parameters
+    ----------
+    `variant : Variant`
+        The variant to load.
+    `root : str | Path, optional`
+        The path to load the data from, by default `DATA_ROOT`
+
+    Returns
+    -------
+    `dict[Word, WordDataset]`
+        A mapping from words to their datasets.
+    """
     root = Path(root)
     return {
         word: WordDataset(root, variant, word)
@@ -206,6 +243,18 @@ def load_dataset(
 def load_wordnet_mappings(
     path: str | Path = WORDNET_MAPPINGS_PATH,
 ) -> dict[str, WordNetMapping]:
+    """Loads the WordNet mappings from disk.
+
+    Parameters
+    ----------
+    `path : str | Path, optional`
+        The path to load the data from, by default `WORDNET_MAPPINGS_PATH`
+
+    Returns
+    -------
+    `dict[str, WordNetMapping]`
+        A mapping from CoarseWSD20 senses/classes to WordNet synsets.
+    """
     with open(Path(path), "r", encoding="utf-8") as file:
         next(file)  # skip header
         return {
@@ -217,6 +266,18 @@ def load_wordnet_mappings(
 def load_out_of_domain_data(
     path: str | Path = OUT_OF_DOMAIN_DATA_PATH,
 ) -> list[OutOfDomainEntry]:
+    """Loads the out-of-domain data from disk.
+
+    Parameters
+    ----------
+    `path : str | Path, optional`
+        The path to load the data from, by default `OUT_OF_DOMAIN_DATA_PATH`
+
+    Returns
+    -------
+    `list[OutOfDomainEntry]`
+        The out-of-domain data.
+    """
     with open(Path(path), "r", encoding="utf-8") as file:
         entries = []
         for line in file:
