@@ -3,7 +3,7 @@ import typing
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Literal, Tuple
+from typing import Literal
 
 Word = Literal[
     "apple",
@@ -29,7 +29,7 @@ Word = Literal[
 ]
 Split = Literal["train", "test"]
 
-WORDS: Tuple = typing.get_args(Word)
+WORDS: tuple = typing.get_args(Word)
 DATA_ROOT: Path = Path("../data/CoarseWSD-20")
 WORDNET_MAPPINGS_PATH = DATA_ROOT / "wn_mappings.tsv"
 OUT_OF_DOMAIN_DATA_PATH = DATA_ROOT / "CoarseWSD-20.outofdomain.tsv"
@@ -79,7 +79,7 @@ class Variant(Enum):
 class Entry:
     """A single entry in a CoarseWSD20-variant dataset."""
 
-    tokens: List[str]
+    tokens: list[str]
     target_index: int
     target_class: str
     target_class_index: int
@@ -89,7 +89,7 @@ class Entry:
 class OutOfDomainEntry:
     """A single entry in the CoarseWSD20 out-of-domain dataset."""
 
-    tokens: List[str]
+    tokens: list[str]
     target_word: str
     target_index: int
     target_class: str
@@ -111,9 +111,9 @@ class WordDataset:
     variant: Variant = None
     word: Word = None
     path: Path = None
-    classes: Dict[str, str] = None
-    train: List[Entry] = None
-    test: List[Entry] = None
+    classes: dict[str, str] = None
+    train: list[Entry] = None
+    test: list[Entry] = None
 
     def __init__(self, root: Path, variant: Variant, word: Word):
         self.variant = variant
@@ -153,11 +153,11 @@ class WordDataset:
     def _path(root: Path, variant: Variant, word: Word) -> Path:
         return root / variant.for_word(word)
 
-    def _load_classes(self) -> Dict[str, str]:
+    def _load_classes(self) -> dict[str, str]:
         with open(self.path / self._CLASSES_FILE, "r", encoding="utf-8") as file:
             return json.load(file)
 
-    def _load_data(self, split: Split) -> List[Entry]:
+    def _load_data(self, split: Split) -> list[Entry]:
         inputs_path = self.path / (self._ENTRIES_FILE_TEMPLATE.format(split=split))
         labels_path = self.path / (self._LABELS_FILE_TEMPLATE.format(split=split))
 
@@ -194,7 +194,7 @@ class WordNetMapping:
 
 def load_dataset(
     variant: Variant, root: str | Path = DATA_ROOT
-) -> Dict[Word, WordDataset]:
+) -> dict[Word, WordDataset]:
     root = Path(root)
     return {
         word: WordDataset(root, variant, word)
@@ -205,7 +205,7 @@ def load_dataset(
 
 def load_wordnet_mappings(
     path: str | Path = WORDNET_MAPPINGS_PATH,
-) -> Dict[str, WordNetMapping]:
+) -> dict[str, WordNetMapping]:
     with open(Path(path), "r", encoding="utf-8") as file:
         next(file)  # skip header
         return {
@@ -216,7 +216,7 @@ def load_wordnet_mappings(
 
 def load_out_of_domain_data(
     path: str | Path = OUT_OF_DOMAIN_DATA_PATH,
-) -> List[OutOfDomainEntry]:
+) -> list[OutOfDomainEntry]:
     with open(Path(path), "r", encoding="utf-8") as file:
         entries = []
         for line in file:
