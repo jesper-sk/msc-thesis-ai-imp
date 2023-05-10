@@ -3,11 +3,16 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[[source]]
+url = "https://download.pytorch.org/whl/cu118"
+verify_ssl = true
+name = "pytorch"
+
 [packages]
 transformers = "*"
 numpy = "*"
 tensorflow = "*"
-torch = "*"
+torch = {version='*', index='pytorch'}
 
 [dev-packages]
 ipykernel = "*"
