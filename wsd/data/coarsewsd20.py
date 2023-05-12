@@ -5,6 +5,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal
 
+from entry import Entry
+
 Word = Literal[
     "apple",
     "arm",
@@ -76,13 +78,13 @@ class Variant(Enum):
 
 
 @dataclass
-class Entry:
-    """A single entry in a CoarseWSD20-variant dataset."""
+class VerticalEntries:
+    """A collection of entries for a single word in a CoarseWSD20-variant dataset."""
 
-    tokens: list[str]
-    target_index: int
-    target_class: str
-    target_class_index: int
+    tokens: list[list[str]]
+    target_indices: list[int]
+    target_classes: list[str]
+    target_class_indices: list[int]
 
 
 @dataclass
@@ -203,6 +205,18 @@ class WordDataset:
         """
         return getattr(self, split)
 
+    def vertical(self, split) -> VerticalEntries:
+        """Returns the entries for the given split, vertically."""
+        tokens, target_indices, target_classes, target_class_indices = zip(
+            *self.split(split)
+        )
+        return VerticalEntries(
+            tokens, target_indices, target_classes, target_class_indices  # type: ignore
+        )
+
+
+Dataset = dict[Word, WordDataset]
+
 
 @dataclass
 class WordNetMapping:
@@ -215,9 +229,7 @@ class WordNetMapping:
     sense_key: str
 
 
-def load_dataset(
-    variant: Variant, root: str | Path = DATA_ROOT
-) -> dict[Word, WordDataset]:
+def load_dataset(variant: Variant, root: str | Path = DATA_ROOT) -> Dataset:
     """Loads the CoarseWSD20-variant datasets for all words.
 
     Parameters
@@ -229,7 +241,7 @@ def load_dataset(
 
     Returns
     -------
-    `dict[Word, WordDataset]`
+    `Dataset`
         A mapping from words to their datasets.
     """
     root = Path(root)
