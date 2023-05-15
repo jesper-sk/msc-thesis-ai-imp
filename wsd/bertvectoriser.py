@@ -1,4 +1,3 @@
-# %%
 # Standard library
 from os import PathLike
 from typing import Any, Callable, Iterator, Literal, Optional, TypeAlias
