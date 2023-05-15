@@ -1,3 +1,4 @@
+# Standard library
 import json
 import typing
 from dataclasses import dataclass
@@ -5,7 +6,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal
 
-from entry import Entry
+# Local imports
+from .entry import Entry, VerticalEntries, transpose_entries
 
 Word = Literal[
     "apple",
@@ -78,22 +80,12 @@ class Variant(Enum):
 
 
 @dataclass
-class VerticalEntries:
-    """A collection of entries for a single word in a CoarseWSD20-variant dataset."""
-
-    tokens: list[list[str]]
-    target_indices: list[int]
-    target_classes: list[str]
-    target_class_indices: list[int]
-
-
-@dataclass
 class OutOfDomainEntry:
     """A single entry in the CoarseWSD20 out-of-domain dataset."""
 
     tokens: list[str]
     target_word: str
-    target_index: int
+    target_word_id: int
     target_class: str
 
 
@@ -164,13 +156,14 @@ class WordDataset:
         ):
             for input_line, label in zip(inputs_file, labels_file):
                 target_index, tokens = input_line.split("\t")
-                target_index = int(target_index)
-                tokens = tokens.split()
-                target_class = self.classes[label.strip()]
-                target_class_index = int(label)
 
                 entries.append(
-                    Entry(tokens, target_index, target_class, target_class_index)
+                    Entry(
+                        tokens=tokens.split(),
+                        target_word_id=int(target_index),
+                        target_class=self.classes[label.strip()],
+                        target_class_id=int(label),
+                    )
                 )
 
         return entries
@@ -207,7 +200,7 @@ class WordDataset:
 
     def vertical(self, split: Split) -> VerticalEntries:
         """Returns the entries for the given split, vertically."""
-        return VerticalEntries(*zip(*self.get_data_split(split)))  # type: ignore
+        return transpose_entries(self.get_data_split(split))
 
 
 Dataset = dict[Word, WordDataset]
@@ -289,8 +282,13 @@ def load_out_of_domain_data(
         entries = []
         for line in file:
             word, sense, index, tokens = line.strip().split("\t")
-            tokens = tokens.split()
-            index = int(index)
-            entries.append(OutOfDomainEntry(tokens, word, index, sense))
+            entries.append(
+                OutOfDomainEntry(
+                    tokens=tokens.split(),
+                    target_word=word,
+                    target_word_id=int(index),
+                    target_class=sense,
+                )
+            )
 
         return entries

@@ -1,18 +1,24 @@
+# %%
+# Standard library
 from os import PathLike
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Iterator, Literal, Optional, TypeAlias
 
-import torch
+# Third-party imports
 import transformers as trans
-from data.entry import Entry
-from tqdm import tqdm
+from torch import Tensor
 from transformers.utils.generic import ModelOutput, PaddingStrategy, TensorType
 
-Tokens = list[str]
-Tokenizer = trans.BertTokenizerFast | trans.BertTokenizer
-TokenizerOutput = trans.tokenization_utils.BatchEncoding
-Model = trans.BertModel
-SubwordMergeFunction = Callable[[torch.Tensor, int, int], torch.Tensor]
-SubwordMergeOperation = Literal["first", "mean"]
+# Local imports
+from data.entry import Entry, VerticalEntries, transpose_entries
+from util.helpers import batched
+
+# Type aliases
+Tokens: TypeAlias = list[str]
+Tokenizer: TypeAlias = trans.BertTokenizerFast | trans.BertTokenizer
+TokenizerOutput: TypeAlias = trans.tokenization_utils.BatchEncoding
+Model: TypeAlias = trans.BertModel
+SubwordMergeFunction: TypeAlias = Callable[[Tensor, int, int], Tensor]
+SubwordMergeOperation: TypeAlias = Literal["first", "mean"]
 
 
 class BertVectoriser:
@@ -66,7 +72,7 @@ class BertVectoriser:
     def _is_loaded(self) -> bool:
         return hasattr(self, "model") and hasattr(self, "tokenizer")
 
-    def load_models(self):
+    def load_models(self) -> None:
         if not self._is_loaded():
             self.tokenizer = trans.BertTokenizerFast.from_pretrained(
                 self.model_name_or_path
@@ -74,11 +80,11 @@ class BertVectoriser:
             self.model = trans.BertModel.from_pretrained(self.model_name_or_path)  # type: ignore
 
     @staticmethod
-    def merge_subword_first(layer: torch.Tensor, start: int, _: int) -> torch.Tensor:
+    def merge_subword_first(layer: Tensor, start: int, _: int) -> Tensor:
         return layer[:, start, :]
 
     @staticmethod
-    def merge_subword_mean(layer: torch.Tensor, start: int, end: int) -> torch.Tensor:
+    def merge_subword_mean(layer: Tensor, start: int, end: int) -> Tensor:
         return layer[:, start:end, :].mean(dim=1)
 
     def encode_tokens(self, tokens: Tokens | list[Tokens]) -> TokenizerOutput:
@@ -95,10 +101,10 @@ class BertVectoriser:
 
     def merge_subword_embeddings(
         self,
-        layer: torch.Tensor,
+        layer: Tensor,
         target_word_id: int,
         word_ids: list[Any],
-    ) -> torch.Tensor:
+    ) -> Tensor:
         indices = [
             token_index
             for token_index, word_id in enumerate(word_ids)
@@ -106,25 +112,22 @@ class BertVectoriser:
         ]
         return self.merge_subword(layer, indices[0], indices[-1])
 
-    def get_layers_of_interest(self, model_output: ModelOutput) -> list[torch.Tensor]:
+    def get_layers_of_interest(self, model_output: ModelOutput) -> list[Tensor]:
         return [
             model_output["hidden_states"][layer] for layer in self.layers_of_interest
         ]
 
-    def __call__(self, data: list[Entry]):
+    def __call__(self, data: list[Entry], batch_size: int = 1) -> Iterator[Tensor]:
         self.load_models()
 
-        embeddings = []
-        for entry in tqdm(data):
-            encoded = self.encode_tokens(entry.tokens)
+        for batch in batched(data, batch_size):
+            entries: VerticalEntries = transpose_entries(batch)
+            encoded = self.encode_tokens(entries.tokens)
             model_output = self.model_pass(encoded)
             subword_embeddings = [
                 self.merge_subword_embeddings(
-                    layer, entry.target_word_id, encoded.word_ids()
+                    layer, entries.target_word_ids, encoded.word_ids()
                 )
                 for layer in self.get_layers_of_interest(model_output)
             ]
-            combined_embeddings = sum(subword_embeddings)
-            embeddings.append(combined_embeddings)
-
-        return embeddings
+            yield sum(subword_embeddings, Tensor(0))

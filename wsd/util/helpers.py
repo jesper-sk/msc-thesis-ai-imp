@@ -1,4 +1,5 @@
 from typing import Iterable
+from itertools import islice
 
 
 def batched(iterable: Iterable, batch_size: int) -> Iterable:
@@ -18,8 +19,8 @@ def batched(iterable: Iterable, batch_size: int) -> Iterable:
     `Iterable`
         The batched iterable.
     """
-    if n < 1:
-        raise ValueError("n must be at least one")
+    if batch_size < 1:
+        raise ValueError("batch_size must be at least one")
     iterator = iter(iterable)
     while batch := tuple(islice(iterator, batch_size)):
         yield batch
