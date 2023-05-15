@@ -188,9 +188,9 @@ class WordDataset:
         `list[list[str]]`
             The tokens for the given split.
         """
-        return [entry.tokens for entry in self.split(split)]
+        return [entry.tokens for entry in self.get_data_split(split)]
 
-    def split(self, split) -> list[Entry]:
+    def get_data_split(self, split) -> list[Entry]:
         """Returns the entries for the given split.
 
         Parameters
@@ -205,14 +205,9 @@ class WordDataset:
         """
         return getattr(self, split)
 
-    def vertical(self, split) -> VerticalEntries:
+    def vertical(self, split: Split) -> VerticalEntries:
         """Returns the entries for the given split, vertically."""
-        tokens, target_indices, target_classes, target_class_indices = zip(
-            *self.split(split)
-        )
-        return VerticalEntries(
-            tokens, target_indices, target_classes, target_class_indices  # type: ignore
-        )
+        return VerticalEntries(*zip(*self.get_data_split(split)))  # type: ignore
 
 
 Dataset = dict[Word, WordDataset]

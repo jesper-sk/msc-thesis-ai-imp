@@ -11,7 +11,6 @@ Tokens = list[str]
 Tokenizer = trans.BertTokenizerFast | trans.BertTokenizer
 TokenizerOutput = trans.tokenization_utils.BatchEncoding
 Model = trans.BertModel
-CoarseWSD20 = dict[str, cwsd.WordDataset]
 SubwordMergeFunction = Callable[[torch.Tensor, int, int], torch.Tensor]
 SubwordMergeOperation = Literal["first", "mean"]
 
@@ -86,7 +85,7 @@ class BertVectoriser:
         return self.tokenizer(
             tokens,
             is_split_into_words=True,
-            padding=PaddingStrategy.LONGEST,  # Pad to max input length of model
+            padding=PaddingStrategy.LONGEST,
             return_tensors=TensorType.PYTORCH,
             return_attention_mask=True,  # Return attention masks to distinguish padding from input
         )
