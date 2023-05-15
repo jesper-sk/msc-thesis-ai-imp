@@ -10,11 +10,14 @@ name = "pytorch"
 
 [packages]
 transformers = "==4.29.0"
-numpy = "==1.23.5"
 torch = {version='==2.0.1+cu118', index='pytorch'}
 
 [dev-packages]
 ipykernel = "*"
+pylint = "*"
+flake8 = "*"
+mypy = "*"
+mypy-extensions = "*"
 
 [requires]
 python_version = "3.10"
