@@ -34,4 +34,4 @@ class VerticalEntries:
 def transpose_entries(
     entries: Iterable[Entry],
 ) -> VerticalEntries:
-    return VerticalEntries(*zip(*map(lambda x: x.unpack(), entries)))  # type: ignore
+    return VerticalEntries(*zip(*map(lambda x: x.unpack(), entries)))
