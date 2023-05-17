@@ -18,6 +18,7 @@ Tokenizer: TypeAlias = trans.BertTokenizerFast | trans.BertTokenizer
 TokenizerOutput: TypeAlias = trans.tokenization_utils.BatchEncoding
 Model: TypeAlias = trans.BertModel
 SubwordMergeOperation: TypeAlias = Literal["first", "mean"]
+LayerMergeOperation: TypeAlias = Literal["sum"]
 
 
 class BertVectoriser:
@@ -27,15 +28,19 @@ class BertVectoriser:
         preload: bool = True,
         model: Optional[Model] = None,
         tokenizer: Optional[Tokenizer] = None,
-        merge_operation: SubwordMergeOperation = "first",
         layers_of_interest: Optional[list[int]] = None,
+        subword_merge_operation: SubwordMergeOperation = "first",
+        layer_merge_operation: LayerMergeOperation = "sum",
     ):
         self.model: Model
         self.tokenizer: Tokenizer
         self.model_name_or_path: str | PathLike[Any]
-
-        self.merge_subword = self.get_subword_merge_function(merge_operation)
         self.layers_of_interest: list[int] = layers_of_interest or [-1]
+
+        self.merge_subword_tokens = self.get_subword_merge_function(
+            subword_merge_operation
+        )
+        self.merge_layers = self.get_layer_merge_function(layer_merge_operation)
 
         if (model is None) ^ (tokenizer is None):
             raise ValueError(
@@ -54,18 +59,6 @@ class BertVectoriser:
             if preload:
                 self.ensure_models_loaded()
 
-    @classmethod
-    def get_subword_merge_function(
-        cls, operation: SubwordMergeOperation
-    ) -> Callable[[Tensor, int, int, int], Tensor]:
-        match operation:
-            case "first":
-                return cls.merge_subword_first
-            case "mean":
-                return cls.merge_subword_mean
-            case _:
-                raise ValueError(f"Unknown merge operation: {operation}")
-
     def _is_loaded(self) -> bool:
         return hasattr(self, "model") and hasattr(self, "tokenizer")
 
@@ -76,17 +69,46 @@ class BertVectoriser:
             )
             self.model = trans.BertModel.from_pretrained(self.model_name_or_path)  # type: ignore
 
-    @staticmethod
-    def merge_subword_first(layer: Tensor, batch_id: int, start: int, _: int) -> Tensor:
-        return layer[batch_id, start, :]  # TODO: Batch first or last dimension?
+        if not self.tokenizer.is_fast:
+            raise ValueError(
+                "Tokenizer should be a 'fast' variant (e.g. BertTokenizerFast)"
+            )
+
+    @classmethod
+    def get_subword_merge_function(
+        cls, operation: SubwordMergeOperation
+    ) -> Callable[[Tensor], Tensor]:
+        try:
+            return getattr(cls, f"merge_subword_{operation}")
+        except AttributeError:
+            raise ValueError(
+                f"Invalid subword merge operation: cannot find function `cls.merge_subword_{operation}`"
+                " corresponding to operation '{operation}'"
+            )
+
+    @classmethod
+    def get_layer_merge_function(
+        cls, operation: LayerMergeOperation
+    ) -> Callable[[list[Tensor]], Tensor]:
+        try:
+            return getattr(cls, f"merge_layers_{operation}")
+        except AttributeError:
+            raise ValueError(
+                f"Invalid layer merge operation: cannot find function `cls.merge_layers_{operation}`"
+                " corresponding to operation '{operation}'"
+            )
 
     @staticmethod
-    def merge_subword_mean(
-        layer: Tensor, batch_id: int, start: int, end: int
-    ) -> Tensor:
-        return layer[batch_id, start:end, :].mean(
-            dim=1
-        )  # TODO: Batch first or last dimension?
+    def merge_layers_sum(layers: list[Tensor]) -> Tensor:
+        return sum(layers, Tensor([0]))
+
+    @staticmethod
+    def merge_subword_first(layer: Tensor) -> Tensor:
+        return layer[0, :]
+
+    @staticmethod
+    def merge_subword_mean(layer: Tensor) -> Tensor:
+        return layer.mean(dim=0)
 
     def encode_tokens(self, tokens: Tokens | list[Tokens]) -> TokenizerOutput:
         return self.tokenizer(
@@ -100,31 +122,32 @@ class BertVectoriser:
     def model_pass(self, encoded: TokenizerOutput) -> ModelOutput:
         return self.model(**encoded, output_hidden_states=True)
 
-    def merge_subword_embeddings(
-        self,
-        layer: Tensor,
-        target_word_id: int,
-        word_ids: list[Any],
-    ) -> Tensor:
-        indices = [
-            token_index
-            for token_index, word_id in enumerate(word_ids)
-            if word_id == target_word_id
-        ]
-        return self.merge_subword(layer, indices[0], indices[-1])
-
-    def get_layer(self, model_output: ModelOutput, layer: int):
+    def get_layer(self, model_output: ModelOutput, layer: int) -> Tensor:
         return model_output["hidden_states"][layer]
 
-    def get_target_subword_token_range(
-        self, word_ids: list[int | None], target_word_id: int
-    ):
-        all_indices = [
-            token_index
-            for token_index, word_id in enumerate(word_ids)
-            if word_id == target_word_id
+    def get_target_subword_token_ranges(
+        self,
+        get_word_ids: Callable[[int], list[int | None]],
+        target_word_ids: list[int],
+        num_sentences: int,
+    ) -> list[tuple[int, int]]:
+        def get_target_subword_token_range(
+            word_ids: list[int | None], target_word_id: int
+        ):
+            all_indices = [
+                token_index
+                for token_index, word_id in enumerate(word_ids)
+                if word_id == target_word_id
+            ]
+            return all_indices[0], all_indices[-1] + 1
+
+        return [  # list[(start_idx, end_idx)]
+            get_target_subword_token_range(
+                word_ids=get_word_ids(entry_id),
+                target_word_id=target_word_ids[entry_id],
+            )
+            for entry_id in range(num_sentences)
         ]
-        return all_indices[0], all_indices[-1] + 1
 
     def __call__(self, data: list[Entry], batch_size: int = 1) -> Iterator[Tensor]:
         self.ensure_models_loaded()
@@ -132,34 +155,24 @@ class BertVectoriser:
         for batch in batched(data, batch_size):
             entries = transpose_entries(batch)
             encoded = self.encode_tokens(entries.tokens)
-            target_token_indices = torch.Tensor(
+            target_token_indices = self.get_target_subword_token_ranges(
+                encoded.word_ids, entries.target_word_ids, batch_size
+            )
+            model_output = self.model_pass(encoded)
+            merged_embeddings = self.merge_layers(
                 [
-                    self.get_target_subword_token_range(
-                        word_ids=encoded.word_ids(entry_id),
-                        target_word_id=entries.target_word_ids[entry_id],
-                    )
-                    for entry_id in range(batch_size)
-                ],
-                dtype=torch.int32,
+                    self.get_layer(model_output, layer_id)
+                    for layer_id in self.layers_of_interest
+                ]
             )
 
-            model_output = self.model_pass(encoded)
-            layers = [
-                self.get_layer(model_output, layer_id)
-                for layer_id in self.layers_of_interest
-            ]
-            merged = sum(layers, Tensor(0))
+            output = torch.zeros(
+                merged_embeddings.shape[0::2]
+            )  # shape: (batch_size, embedding_dim)
+            for sentence_index, (encoding, (start_index, end_index)) in enumerate(
+                zip(merged_embeddings, target_token_indices)
+            ):
+                subword_tokens = encoding[start_index:end_index, :]
+                output[sentence_index, :] = self.merge_subword_tokens(subword_tokens)
 
-            output = t
-
-            for sentence_encoding in merged:
-                pass
-
-            subword_embeddings = [
-                self.merge_subword_embeddings(
-                    layer=self.get_layer(layer, model_output),
-                    target_word_id=entries.target_word_ids,
-                )
-                for layer in self.get_layers_of_interest(model_output)
-            ]
-            yield sum(subword_embeddings, Tensor(0))
+            yield output
