@@ -11,6 +11,7 @@ name = "pytorch"
 [packages]
 transformers = "==4.29.0"
 torch = {version='==2.0.1+cu118', index='pytorch'}
+umap-learn = {extras = ["plot"], version = "*"}
 
 [dev-packages]
 ipykernel = "*"
