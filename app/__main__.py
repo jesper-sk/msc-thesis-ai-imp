@@ -1,6 +1,8 @@
+# Standard library
 import argparse
 
-from bertvectoriser import BertVectoriser
+# First-party imports
+from wsd.vectorise.bert import BertVectoriser
 
 
 def main():

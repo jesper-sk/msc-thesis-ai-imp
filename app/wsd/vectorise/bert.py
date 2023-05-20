@@ -1,6 +1,6 @@
 # Standard library
 from os import PathLike
-from typing import Any, Callable, Iterator, Literal, Optional, TypeAlias
+from typing import Any, Callable, Iterator, Literal, Optional, Sequence, TypeAlias
 
 # Third-party imports
 import torch
@@ -9,8 +9,8 @@ from torch import Tensor
 from transformers.utils.generic import ModelOutput, PaddingStrategy, TensorType
 
 # Local imports
-from data.entry import Entry, transpose_entries
-from util.helpers import batched
+from ..data.entry import Entry, transpose_entries
+from ..util.helpers import batched
 
 # Type aliases
 Tokens: TypeAlias = list[str]
@@ -110,7 +110,7 @@ class BertVectoriser:
     def merge_subword_mean(layer: Tensor) -> Tensor:
         return layer.mean(dim=0)
 
-    def encode_tokens(self, tokens: Tokens | list[Tokens]) -> TokenizerOutput:
+    def encode_tokens(self, tokens: Tokens | Sequence[Tokens]) -> TokenizerOutput:
         return self.tokenizer(
             tokens,
             is_split_into_words=True,
@@ -128,7 +128,7 @@ class BertVectoriser:
     def get_target_subword_token_ranges(
         self,
         get_word_ids: Callable[[int], list[int | None]],
-        target_word_ids: list[int],
+        target_word_ids: Sequence[int],
         num_sentences: int,
     ) -> list[tuple[int, int]]:
         def get_target_subword_token_range(
@@ -169,6 +169,7 @@ class BertVectoriser:
             output = torch.zeros(
                 merged_embeddings.shape[0::2]
             )  # shape: (batch_size, embedding_dim)
+
             for sentence_index, (encoding, (start_index, end_index)) in enumerate(
                 zip(merged_embeddings, target_token_indices)
             ):

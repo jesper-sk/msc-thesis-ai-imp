@@ -18,7 +18,7 @@
 
 3. Run the CLI of the project. This can be done through pipenv.
     ```sh
-    pipenv run python wsd
+    pipenv run python app
     ```
 
 
