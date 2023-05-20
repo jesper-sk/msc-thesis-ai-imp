@@ -1,5 +1,6 @@
-from typing import Iterable
+# Standard library
 from itertools import islice
+from typing import Iterable
 
 
 def batched(iterable: Iterable, batch_size: int) -> Iterable:
@@ -24,3 +25,8 @@ def batched(iterable: Iterable, batch_size: int) -> Iterable:
     iterator = iter(iterable)
     while batch := tuple(islice(iterator, batch_size)):
         yield batch
+
+
+def num_batches(num_samples: int, batch_size: int):
+    quotient, remainder = divmod(num_samples, batch_size)
+    return quotient + (remainder > 0)
