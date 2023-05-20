@@ -4,12 +4,12 @@ import typing
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeAlias
 
 # Local imports
 from .entry import Entry, VerticalEntries, transpose_entries
 
-Word = Literal[
+Word: TypeAlias = Literal[
     "apple",
     "arm",
     "bank",
@@ -31,7 +31,7 @@ Word = Literal[
     "trunk",
     "yard",
 ]
-Split = Literal["train", "test"]
+Split: TypeAlias = Literal["train", "test"]
 
 WORDS: tuple = typing.get_args(Word)
 DATA_ROOT: Path = Path("data/CoarseWSD-20")
@@ -203,7 +203,7 @@ class WordDataset:
         return transpose_entries(self.get_data_split(split))
 
 
-Dataset = dict[Word, WordDataset]
+Dataset: TypeAlias = dict[Word, WordDataset]
 
 
 @dataclass

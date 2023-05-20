@@ -11,6 +11,7 @@ from transformers.utils.generic import ModelOutput, PaddingStrategy, TensorType
 # Local imports
 from ..data.entry import Entry, transpose_entries
 from ..util.helpers import batched
+from . import Vectoriser
 
 # Type aliases
 Tokens: TypeAlias = list[str]
@@ -21,7 +22,7 @@ SubwordMergeOperation: TypeAlias = Literal["first", "mean"]
 LayerMergeOperation: TypeAlias = Literal["sum"]
 
 
-class BertVectoriser:
+class BertVectoriser(Vectoriser):
     def __init__(
         self,
         model_name_or_path: str | PathLike[Any] = "bert-base-uncased",
