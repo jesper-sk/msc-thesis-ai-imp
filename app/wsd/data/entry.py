@@ -15,7 +15,7 @@ class Entry:
     def unpack(self) -> tuple[list[str], int, str, int]:
         return (
             self.tokens,
-            self.target_class_id,
+            self.target_word_id,
             self.target_class,
             self.target_class_id,
         )
@@ -34,4 +34,4 @@ class VerticalEntries:
 def transpose_entries(
     entries: Iterable[Entry],
 ) -> VerticalEntries:
-    return VerticalEntries(*zip(*map(lambda x: x.unpack(), entries)))
+    return VerticalEntries(*zip(*map(lambda x: x.unpack(), entries)))  # type: ignore
