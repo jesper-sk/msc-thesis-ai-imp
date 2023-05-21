@@ -6,8 +6,6 @@ from pathlib import Path
 
 # Third-party imports
 import numpy as np
-
-# First-party imports
 import wsd.data.coarsewsd20 as cwsd
 from wsd.vectorise import vectorise_coarsewsd20
 from wsd.vectorise.bert import BertVectoriser
@@ -32,7 +30,7 @@ def vectorise(args: Namespace):
     bert_kwargs = {"device": "cuda" if args.cuda else None}
     vectoriser = BertVectoriser(**bert_kwargs)  # type: ignore
 
-    for key, embedding in vectorise_coarsewsd20(vectoriser, dataset):
+    for key, embedding in vectorise_coarsewsd20(vectoriser, dataset, args.batchsize):
         fn = out_path / f"{key}.npy"
         np.save(fn, embedding)
 

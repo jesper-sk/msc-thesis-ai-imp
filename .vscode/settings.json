@@ -17,7 +17,8 @@
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.codeActionsOnSave": {
             "source.organizeImports": true
-        }
+        },
+        "editor.rulers": [90]
     },
     "python.analysis.typeCheckingMode": "basic",
     "python.linting.pylintEnabled": false,

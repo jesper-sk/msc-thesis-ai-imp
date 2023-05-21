@@ -34,4 +34,17 @@ class VerticalEntries:
 def transpose_entries(
     entries: Iterable[Entry],
 ) -> VerticalEntries:
+    """Transpose a collection of entries. Instead of a list of entries, this will return a
+    single data structure with lists of the corresponding fields.
+
+    Parameters
+    ----------
+    entries : Iterable[Entry]
+        The entries to transpose.
+
+    Returns
+    -------
+    VerticalEntries
+        The transposed entries.
+    """
     return VerticalEntries(*zip(*map(lambda x: x.unpack(), entries)))  # type: ignore
