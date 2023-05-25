@@ -1,7 +1,5 @@
-# Future
 from __future__ import annotations
 
-# Standard library
 import itertools as it
 from typing import Any, Callable, Iterable
 

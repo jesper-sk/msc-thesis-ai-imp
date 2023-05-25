@@ -1,12 +1,9 @@
-# Standard library
 from dataclasses import dataclass
 
-# Third-party imports
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 
-# Local imports
 from ..data import VerticalEntries
 
 

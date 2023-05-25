@@ -1,7 +1,6 @@
-# Standard library
 from functools import partial
 from itertools import islice
-from typing import Callable, Iterable
+from typing import Iterable
 
 
 def batched(iterable: Iterable, batch_size: int) -> Iterable:

@@ -1,15 +1,12 @@
-# Standard library
 from os import PathLike
 from typing import Any, Callable, Iterable, Literal, Optional, Sequence, TypeAlias
 
-# Third-party imports
 import torch
 import transformers as trans
 from torch import Tensor
 from transformers import BertModel, BertTokenizerFast
 from transformers.utils.generic import ModelOutput, PaddingStrategy, TensorType
 
-# Local imports
 from ..data.entry import Entry, transpose_entries
 from . import Vectoriser
 

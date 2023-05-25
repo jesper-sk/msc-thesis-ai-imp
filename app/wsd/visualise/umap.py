@@ -1,4 +1,3 @@
-# Third-party imports
 import numpy as np
 from umap import UMAP
 

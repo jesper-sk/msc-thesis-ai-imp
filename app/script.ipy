@@ -1,9 +1,8 @@
 # %%
-
-# Third-party imports
 import torch
-import wsd.data.coarsewsd20 as cwsd
 from torch import Tensor
+
+import wsd.data.coarsewsd20 as cwsd
 from wsd.data.entry import transpose_entries
 from wsd.util.batch import batched
 from wsd.vectorise.bert import BertVectoriser
