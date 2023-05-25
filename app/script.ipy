@@ -1,0 +1,61 @@
+# %%
+
+# Third-party imports
+import torch
+import wsd.data.coarsewsd20 as cwsd
+from torch import Tensor
+from wsd.data.entry import transpose_entries
+from wsd.util.batch import batched
+from wsd.vectorise.bert import BertVectoriser
+
+# %%
+
+data = cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+    "seal"
+].train
+entries = transpose_entries(data)
+
+# Third-party imports
+# %%
+import matplotlib.pyplot as plt
+import numpy as np
+import umap
+
+# %% Load data
+word = "bow"
+split = "train"
+
+embeddings = np.load(f"../out/vectorised/{word}.{split}.npy")
+entries = transpose_entries(
+    cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+        word
+    ].get_data_split(split)
+)
+umap_emb = umap.UMAP().fit_transform(embeddings)
+
+# %%
+
+plt.scatter(
+    umap_emb[:, 0],
+    umap_emb[:, 1],
+    c=[["red", "blue", "green", "purple"][x] for x in entries.target_class_ids],
+)
+plt.gca().set_aspect("equal", "datalim")
+plt.title("UMAP projection of CWSD sentences 'chair'", fontsize=24)
+# Third-party imports
+
+# Third-party imports
+# %%
+from sklearn.cluster import KMeans
+
+k = KMeans(n_clusters=len(np.unique(entries.target_class_ids)))
+k.fit(embeddings)
+# Third-party imports
+# %%
+from sklearn.metrics import confusion_matrix
+
+predicted = k.labels_
+actual = entries.target_class_ids
+plt.matshow(confusion_matrix(actual, predicted))
+plt.colorbar()
+# %%

@@ -1,0 +1,29 @@
+# %% Try out covariance and correlation matrices
+# Third-party imports
+import matplotlib.pyplot as plt
+import numpy as np
+import wsd.data.coarsewsd20 as cwsd
+from wsd.data.entry import transpose_entries
+
+# %% Load data
+word = "arm"
+split = "train"
+
+embeddings = np.load(f"../out/vectorised/{word}.{split}.npy")
+entries = transpose_entries(
+    cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+        word
+    ].get_data_split(split)
+)
+
+# %% Sort the embeddings based on class id
+embeddings_sorted = embeddings[np.argsort(np.array(entries.target_class_ids))]
+np.unique(entries.target_classes, return_counts=True)
+# %% Plot covariance matrix of embeddings
+plt.matshow(np.cov(embeddings_sorted))
+plt.colorbar()
+
+# %% Plot correlation matrix of embeddings
+plt.matshow(np.corrcoef(embeddings_sorted))
+plt.colorbar()
+# %%
