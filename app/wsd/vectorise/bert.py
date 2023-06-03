@@ -27,7 +27,7 @@ class BertVectoriser(Vectoriser):
         model: Optional[Model] = None,
         tokenizer: Optional[Tokenizer] = None,
         layers_of_interest: Optional[list[int]] = None,
-        subword_merge_operation: SubwordMergeOperation = "first",
+        subword_merge_operation: SubwordMergeOperation = "mean",
         layer_merge_operation: LayerMergeOperation = "sum",
         device: str | None = None,
     ):
@@ -74,7 +74,7 @@ class BertVectoriser(Vectoriser):
         self.model: Model
         self.tokenizer: Tokenizer
         self.model_name_or_path: str | PathLike[Any]
-        self.layers_of_interest: list[int] = layers_of_interest or [-1]
+        self.layers_of_interest: list[int] = layers_of_interest or [-1, -2, -3, -4]
         self.device = device
 
         self.merge_subword_tokens = self._get_subword_merge_function(
