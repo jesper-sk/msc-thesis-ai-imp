@@ -1,12 +1,12 @@
 # %% Try out covariance and correlation matrices
-# Third-party imports
 import matplotlib.pyplot as plt
 import numpy as np
+
 import wsd.data.coarsewsd20 as cwsd
 from wsd.data.entry import transpose_entries
 
 # %% Load data
-word = "arm"
+word = "bow"
 split = "train"
 
 embeddings = np.load(f"../out/vectorised/{word}.{split}.npy")

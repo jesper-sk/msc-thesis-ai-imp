@@ -1,12 +1,9 @@
-# Standard library
 from dataclasses import dataclass
 
-# Third-party imports
 import numpy as np
+import sklearn.metrics as m
 from sklearn.cluster import KMeans
-from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 
-# Local imports
 from ..data import VerticalEntries
 
 
@@ -19,9 +16,7 @@ class ClusterResult:
     f1: float
 
 
-def test_kmeans_cluster(
-    embeddings: np.ndarray, entries: VerticalEntries
-) -> ClusterResult:
+def test_kmeans_cluster(embeddings: np.ndarray, entries: VerticalEntries) -> float:
     """Performs k-means clustering on the given embeddings.
 
     Parameters
@@ -43,10 +38,4 @@ def test_kmeans_cluster(
     predicted = k.labels_
     actual = entries.target_class_ids
 
-    return ClusterResult(
-        confusion_matrix=confusion_matrix(actual, predicted),
-        accuracy=k.score(embeddings),
-        precision=precision_score(actual, predicted, average="macro"),
-        recall=recall_score(actual, predicted, average="macro"),
-        f1=f1_score(actual, predicted, average="macro"),
-    )
+    return m.v_measure_score(actual, predicted)

@@ -1,6 +1,4 @@
 # %%
-
-# Third-party imports
 import torch
 from torch import Tensor
 

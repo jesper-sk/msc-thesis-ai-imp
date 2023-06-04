@@ -1,11 +1,10 @@
-# Standard library
 import argparse
 import sys
 from argparse import Namespace
 from pathlib import Path
 
-# Third-party imports
 import numpy as np
+
 import wsd.data.coarsewsd20 as cwsd
 from wsd.vectorise import vectorise_coarsewsd20
 from wsd.vectorise.bert import BertVectoriser

@@ -1,0 +1,29 @@
+# Third-party imports
+# %%
+import warnings
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+import wsd.data.coarsewsd20 as cwsd
+from wsd.cluster.kmeans import test_kmeans_cluster
+from wsd.data.entry import transpose_entries
+
+warnings.filterwarnings("ignore")
+
+# %% Load data
+word = "bow"
+split = "train"
+
+for word in cwsd.WORDS:
+    for split in ("train", "test"):
+        embeddings = np.load(f"../out/vectorised/{word}.{split}.npy")
+        entries = transpose_entries(
+            cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+                word
+            ].get_data_split(split)
+        )
+
+        r = test_kmeans_cluster(embeddings, entries)
+        print(f"{word}.{split}\t{r:.5f}")
+# %%

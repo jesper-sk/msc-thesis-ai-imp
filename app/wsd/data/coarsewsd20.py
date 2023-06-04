@@ -1,4 +1,3 @@
-# Standard library
 import json
 import typing
 from dataclasses import dataclass
@@ -6,7 +5,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal, TypeAlias
 
-# Local imports
 from .entry import Entry, VerticalEntries, transpose_entries
 
 Word: TypeAlias = Literal[

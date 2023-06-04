@@ -1,3 +1,6 @@
 [submodule "data/CoarseWSD-20"]
 	path = data/CoarseWSD-20
 	url = https://github.com/jesper-sk/coarsewsd-20
+[submodule "app/thirdparty/ewiser"]
+	path = app/thirdparty/ewiser
+	url = https://github.com/SapienzaNLP/ewiser
