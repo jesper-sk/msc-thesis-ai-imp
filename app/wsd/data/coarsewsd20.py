@@ -197,6 +197,9 @@ class WordDataset:
         return getattr(self, split)
 
     def all(self) -> list[Entry]:
+        """Returns all data entries, where train and test sets are concatentated (in that
+        order).
+        """
         return self.train + self.test
 
     def vertical(self, split: Split | None = None) -> VerticalEntries:

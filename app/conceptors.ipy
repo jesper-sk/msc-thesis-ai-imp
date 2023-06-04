@@ -1,0 +1,55 @@
+# %% Imports
+import warnings
+from pathlib import Path
+
+import numpy as np
+
+from wsd.data import coarsewsd20 as cwsd
+
+warnings.filterwarnings("ignore")
+
+data = cwsd.load_dataset(cwsd.Variant.REGULAR, "../data/CoarseWSD-20")
+
+
+def load_npy(
+    word: cwsd.Word,
+    split=None,
+    path: Path = Path("../out/vectorised/sensebert-base-uncased"),
+):
+    if split:
+        return np.load(path / f"{word}.{split}.npy")
+    return np.concatenate(
+        (np.load(path / f"{word}.train.npy"), np.load(path / f"{word}.test.npy"))
+    )
+
+
+def load_word(word: cwsd.Word, split=None):
+    embeddings = load_npy(word, split)
+    class_ids = np.array(data[word].vertical(split).target_class_ids)
+    classes = data[word].classes
+
+    ret = {}
+    for current_id in np.unique(class_ids):
+        class_embeddings = embeddings[class_ids == current_id]
+        ret[classes[str(current_id)]] = conceptor_from(class_embeddings.T)
+
+    return ret
+
+
+def conceptor_from(embeddings: np.ndarray, aperture: float = 1):
+    correlation_matrix = np.corrcoef(embeddings)
+    scaled_identity = np.eye(len(correlation_matrix)) * aperture**-2
+
+    return correlation_matrix @ np.linalg.inv(correlation_matrix + scaled_identity)
+
+
+# %% Save all conceptors
+
+for word in cwsd.WORDS:
+    print(word)
+    np.save(
+        f"../out/vectorised/bert-base-uncased/{word}.conceptor+a1.npy",
+        load_word(word),
+    )
+
+# %%
