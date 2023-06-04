@@ -112,7 +112,7 @@ class WordDataset:
 
         self.load()
 
-    def load(self):
+    def load(self) -> None:
         """Loads the dataset from disk."""
         self.classes: dict[str, str] = self._load_classes()
         self.train: list[Entry] = self._load_data("train")
@@ -198,9 +198,12 @@ class WordDataset:
         """
         return getattr(self, split)
 
-    def vertical(self, split: Split) -> VerticalEntries:
+    def all(self) -> list[Entry]:
+        return self.train + self.test
+
+    def vertical(self, split: Split | None = None) -> VerticalEntries:
         """Returns the entries for the given split, vertically."""
-        return transpose_entries(self.get_data_split(split))
+        return transpose_entries(self.get_data_split(split) if split else self.all())
 
 
 Dataset: TypeAlias = dict[Word, WordDataset]
