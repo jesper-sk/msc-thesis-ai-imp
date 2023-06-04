@@ -2,3 +2,4 @@ __pycache__
 .venv
 .mypy_caches
 out/
+data/WSD_Evaluation_Framework
