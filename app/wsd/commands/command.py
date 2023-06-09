@@ -16,7 +16,7 @@ class Command(ABC):
 
     @staticmethod
     @abstractmethod
-    def add_arguments(parser: ArgumentParser) -> ArgumentParser:
+    def add_arguments(parser: ArgumentParser) -> None:
         pass
 
     @staticmethod

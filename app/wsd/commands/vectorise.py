@@ -5,11 +5,11 @@ from .command import Command
 
 class Vectorise(Command):
     @staticmethod
-    def name():
+    def name() -> str:
         return "vectorise"
 
     @staticmethod
-    def add_arguments(parser: ArgumentParser):
+    def add_arguments(parser: ArgumentParser) -> None:
         parser.add_argument(
             "data", choices=["coarsewsd"], help="the type of dataset to vectorise"
         )
@@ -42,7 +42,6 @@ class Vectorise(Command):
             default="cpu",
             help="the device to use (cpu, cuda, cuda:0, etc)",
         )
-        return parser
 
     @staticmethod
     def run(args: Namespace) -> None:

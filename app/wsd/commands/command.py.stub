@@ -5,12 +5,12 @@ from .command import Command, commands
 
 class MyCommand(Command):
     @staticmethod
-    def name():
+    def name() -> str:
         return "mycommand"
 
     @staticmethod
-    def add_arguments(parser: ArgumentParser):
-        return parser
+    def add_arguments(parser: ArgumentParser) -> None:
+        pass
 
     @staticmethod
     def run(args: Namespace) -> None:
