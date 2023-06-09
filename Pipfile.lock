@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "4c75fe15d3cc9a00931528293dfb975f3e93ad71ccb6985898105d101302a62d"
+            "sha256": "ed28fab9858a27e2a44a6a6f75983f025aa59031679a42ebfd790f26e35589f1"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -245,10 +245,6 @@
                 "sha256:2356ea690c3cf003c1468a243a9063144235de45b080b3652de4f3d44e57d783"
             ],
             "version": "==0.5.2"
-        },
-        "ewiser": {
-            "path": "./repos/ewiser",
-            "version": "==0.1"
         },
         "filelock": {
             "hashes": [
