@@ -1,0 +1,21 @@
+# %%
+import numpy as np
+
+n = 64
+
+M = np.random.rand(n, n)
+z = np.random.rand(n)
+
+v1 = z.T @ M @ z
+
+# fmt: off
+v2 = sum(
+
+    z[x] * M[x, y] * z[y]
+
+    for x in range(n)
+    for y in range(n)
+)
+# fmt: on
+
+print(f"Linalg:\t{v1}\nNaive:\t{v2}")

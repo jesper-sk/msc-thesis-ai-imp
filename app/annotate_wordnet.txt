@@ -1,0 +1,7 @@
+- nltk.download('wordnet')
+- spacy
+- laad wordnet text in
+- annotate obv annotate.py
+- extraheer wordnet ID
+- cluster obv wordnet ID
+- accuratesse
