@@ -1,0 +1,17 @@
+from argparse import ArgumentParser, Namespace
+
+from .command import Command, commands
+
+
+class MyCommand(Command):
+    @staticmethod
+    def name():
+        return "mycommand"
+
+    @staticmethod
+    def add_arguments(parser: ArgumentParser):
+        return parser
+
+    @staticmethod
+    def run(args: Namespace) -> None:
+        pass
