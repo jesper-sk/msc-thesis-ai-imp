@@ -12,8 +12,6 @@ name = "pytorch"
 transformers = "==4.29.0"
 torch = {version='==2.0.1+cu118', index='pytorch'}
 umap-learn = {extras = ["plot"], version = "*"}
-torch-sparse = {file = "https://data.pyg.org/whl/torch-2.0.0%2Bcu118/torch_sparse-0.6.17%2Bpt20cu118-cp310-cp310-win_amd64.whl"}
-torch-scatter = {file = "https://data.pyg.org/whl/torch-2.0.0%2Bcu118/torch_scatter-2.1.1%2Bpt20cu118-cp310-cp310-win_amd64.whl"}
 
 [dev-packages]
 ipykernel = "*"
