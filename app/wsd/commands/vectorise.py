@@ -10,9 +10,9 @@ class Vectorise(Command):
 
     @staticmethod
     def add_arguments(parser: ArgumentParser) -> None:
-        parser.add_argument(
-            "data", choices=["coarsewsd"], help="the type of dataset to vectorise"
-        )
+        # parser.add_argument(
+        #     "data", choices=["coarsewsd"], help="the type of dataset to vectorise"
+        # )
         parser.add_argument(
             "-m",
             "--model",
@@ -50,11 +50,12 @@ class Vectorise(Command):
         import numpy as np
 
         from ..data import coarsewsd20 as cwsd
+        from ..util.path import is_valid_directoy
         from ..vectorise import vectorise_coarsewsd20
         from ..vectorise.bert import BertVectoriser
 
         out_path = Path(args.out if args.out else f"./out/vectorised/{args.model}")
-        assert (out_path.exists() and out_path.is_dir()) or out_path.suffix == ""
+        assert is_valid_directoy(out_path)
 
         dataset = cwsd.load_dataset(cwsd.Variant.REGULAR)
         vectoriser = BertVectoriser(model_name_or_path=args.model, device=args.device)

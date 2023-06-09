@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, Namespace
 
-from .command import Command, commands
+from .command import Command
 
 
 class MyCommand(Command):

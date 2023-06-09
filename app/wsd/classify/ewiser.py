@@ -1,24 +1,36 @@
-import argparse
+class EwiserClassifier:
+    def __init__(
+        self,
+        checkpoint: str,
+        spacy_model: str,
+        device: str,
+        language: str,
+        **disambiguator_kwargs
+    ):
+        self.checkpoint_path = checkpoint
+        self.disambiguator_kwargs = disambiguator_kwargs
+        self.language = language
+        self.device = device
+        self.spacy_model = spacy_model
 
-import torch
+        self.processor = None
 
+    def import_load(self):
+        import ewiser.fairseq_ext
+        import nltk
+        import spacy
+        from ewiser.spacy.disambiguate import Disambiguator
 
-def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
-        "-c",
-        "--checkpoints",
-        type=str,
-        nargs="+",
-        required=True,
-        help="Path of trained EWISER checkpoint(s).",
-    )
+        nltk.download("wordnet")  #  Needed inside EWISER
+        classifier = Disambiguator(
+            self.checkpoint_path,
+            self.language,
+            save_wsd_details=False,
+            **self.disambiguator_kwargs
+        ).eval()
+        classifier.to(self.device)
+        self.processor = spacy.load(self.spacy_model, disable=["parser", "ner"])
+        classifier.enable(self.processor, "wsd")
 
-    return parser
-
-
-def build_model(args):
-    data = torch.load(args.checkpoints[0], map_location="cpu")
-    model_args = data["args"]
-    model_args.cpu = args.device == "cpu"
-    model_args.context_embeddings_cache = args.device
-    state = data["model"]
+    def is_loaded(self):
+        return self.processor is not None
