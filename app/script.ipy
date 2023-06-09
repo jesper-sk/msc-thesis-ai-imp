@@ -44,17 +44,5 @@ plt.title("UMAP projection of CWSD sentences 'chair'", fontsize=24)
 # Third-party imports
 
 # Third-party imports
-# %%
-from sklearn.cluster import KMeans
 
-k = KMeans(n_clusters=len(np.unique(entries.target_class_ids)))
-k.fit(embeddings)
-# Third-party imports
-# %%
-from sklearn.metrics import confusion_matrix
-
-predicted = k.labels_
-actual = entries.target_class_ids
-plt.matshow(confusion_matrix(actual, predicted))
-plt.colorbar()
 # %%

@@ -1,0 +1,77 @@
+# %% Imports
+import itertools as it
+import warnings
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn import cluster as c
+from sklearn import metrics
+
+from wsd.data import coarsewsd20 as cwsd
+
+warnings.filterwarnings("ignore")
+# %% Data
+
+data = cwsd.load_dataset(cwsd.Variant.REGULAR, "../data/CoarseWSD-20")
+
+
+# %% K-means function definitions
+def load(
+    word: cwsd.Word,
+    split=None,
+    path: Path = Path("../out/vectorised/sensebert-base-uncased"),
+):
+    if split:
+        return np.load(path / f"{word}.{split}.npy")
+    return np.concatenate(
+        (np.load(path / f"{word}.train.npy"), np.load(path / f"{word}.test.npy"))
+    )
+
+
+def kmeans(embeddings, target_class_ids):
+    k = c.KMeans(n_clusters=len(np.unique(target_class_ids)))
+    k.fit(embeddings)
+    return k.labels_
+
+
+def cluster(word, split=None, do_cluster=kmeans):
+    embeddings = load(word, split)
+    entries = data[word].vertical(split)
+
+    predicted = do_cluster(embeddings, entries.target_class_ids)
+    actual = entries.target_class_ids
+
+    return actual, predicted
+
+
+def evaluate_kmeans(
+    word, split=None, do_cluster=kmeans, do_eval=metrics.adjusted_rand_score
+):
+    return do_eval(*cluster(word, split, do_cluster))
+
+
+def kmeans_confusion(word, split=None):
+    embeddings = load(word, split)
+    entries = data[word].vertical(split)
+
+    print(np.unique(entries.target_class_ids, return_counts=True))
+
+    predicted = kmeans(embeddings, entries.target_class_ids)
+    actual = entries.target_class_ids
+
+    plt.matshow(metrics.confusion_matrix(actual, predicted))
+    plt.colorbar()
+
+
+kconf = kmeans_confusion
+keval = evaluate_kmeans
+
+# %% Evaluate all
+
+print("word\t score\t\t samples")
+for word in data.keys():
+    rand_score = evaluate_kmeans(word, None, kmeans, metrics.v_measure_score)
+    print(f"{word}:\t {rand_score:.5f}\t {len(data[word].all())}")
+
+# %%
