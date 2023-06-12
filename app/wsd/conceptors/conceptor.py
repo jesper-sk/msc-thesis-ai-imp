@@ -49,7 +49,7 @@ class Conceptor(np.ndarray):
         conceptor_matrix,
         aperture: float | None = None,
     ):
-        obj = np.asarray(conceptor_matrix).view(cls)
+        obj = np.asarray(conceptor_matrix).view(cls)  # Calls __array_finalize__
         obj.aperture = aperture
 
         return obj
