@@ -50,12 +50,12 @@ class Vectorise(Command):
         import numpy as np
 
         from ..data import coarsewsd20 as cwsd
-        from ..util.path import is_valid_directoy
+        from ..util.path import is_valid_directory
         from ..vectorise import vectorise_coarsewsd20
         from ..vectorise.bert import BertVectoriser
 
         out_path = Path(args.out if args.out else f"./out/vectorised/{args.model}")
-        assert is_valid_directoy(out_path)
+        assert is_valid_directory(out_path)
 
         dataset = cwsd.load_dataset(cwsd.Variant.REGULAR)
         vectoriser = BertVectoriser(model_name_or_path=args.model, device=args.device)
