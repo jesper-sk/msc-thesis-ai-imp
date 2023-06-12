@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 
-def is_valid_directoy(path: os.PathLike[str], must_exist: bool = False):
+def is_valid_directory(path: os.PathLike[str], must_exist: bool = False):
     path = Path(path)
     if path.exists() and path.is_dir():
         return True
