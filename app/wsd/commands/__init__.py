@@ -1,4 +1,4 @@
-from .classify import Classify
+from .prepewiser import PrepEwiser
 from .vectorise import Vectorise
 
-commands = [Vectorise, Classify]
+commands = [Vectorise, PrepEwiser]
