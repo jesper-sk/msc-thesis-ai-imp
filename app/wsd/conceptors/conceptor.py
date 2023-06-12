@@ -71,17 +71,44 @@ class Conceptor(np.ndarray):
     def inv(self) -> Conceptor:
         return la.inv(self)  # type: ignore
 
-    def logic_not(self) -> Conceptor:
+    def neg(self) -> Conceptor:
         return eye_like(self) - self  # type: ignore
 
-    def logic_and(self, other: Conceptor) -> Conceptor:
+    def con(self, other: Conceptor) -> Conceptor:
         return (self.inv() + other.inv() + eye_like(self)).inv()  # type: ignore
 
-    def logic_or(self, other: Conceptor) -> Conceptor:
+    def dis(self, other: Conceptor) -> Conceptor:
         id = eye_like(self)
         return (
             id + (self @ (id - self).inv() + other @ (id - other).inv()).inv()  # type: ignore
         ).inv()
+
+    def to_ellipse_params(self) -> tuple[float, float, float]:
+        """Returns ellipse parameters (a, b, theta) for the conceptor. Note that the
+        conceptor must be of order 2.
+
+        Returns
+        -------
+        tuple[float, float, float]
+            Ellipse parameters (a, b, theta) for the conceptor.
+
+        Explanation
+        -----------
+        The principal axes of the ellipse are the eigenvectors of the conceptor. The
+        lengths of the principal axes are the square roots of the eigenvalues of the
+        conceptor. The angle of rotation of the ellipse is the angle between the first
+        principal axis and the x-axis.
+
+        References
+        ----------
+        - [1] https://en.wikipedia.org/wiki/Ellipse#General_ellipse
+        - [2] https://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors
+        - [3] https://math.stackexchange.com/questions/612981/find-angle-at-given-points-in-ellipse
+        """
+        assert self.order == 2
+
+        s = la.svd(self)[1]
+        return s[0], s[1], np.arctan2(self[1, 0], self[0, 0])
 
 
 # %%
