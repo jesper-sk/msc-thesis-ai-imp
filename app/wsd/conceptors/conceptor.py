@@ -16,8 +16,19 @@ def is_square_matrix(arr: NDArray[Any]):
     return len(shape) == 2 and shape[0] == shape[1]
 
 
-def eye_like(conceptor: Conceptor, dtype=None) -> np.ndarray:
-    return np.eye(conceptor.order, dtype=dtype)
+def eye_like(arr: np.ndarray, dtype=None) -> np.ndarray:
+    return np.eye(arr.shape[0], dtype=dtype)
+
+
+def cosine_similarity(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    return np.dot(a, b) / (la.norm(a) * la.norm(b))
+
+
+def lissajous(a, b, delta_f, range):
+    range = np.asarray(range)
+    x = np.sin(a * range + (np.pi / delta_f))
+    y = np.sin(b * range)
+    return np.hstack((x[:, None], y[:, None]))
 
 
 class Conceptor(np.ndarray):
@@ -34,10 +45,7 @@ class Conceptor(np.ndarray):
         correlation_matrix = np.asarray(correlation_matrix)
         assert is_square_matrix(correlation_matrix)
         conceptor_matrix = (
-            la.inv(
-                correlation_matrix
-                + aperture ** (-2) * np.eye(correlation_matrix.shape[0])
-            )
+            la.inv(correlation_matrix + aperture ** (-2) * eye_like(correlation_matrix))
             @ correlation_matrix
             + 1e-10
         )
@@ -68,6 +76,7 @@ class Conceptor(np.ndarray):
             assert is_square_matrix(obj)
             self.order = obj.shape[0]
 
+    @property
     def inv(self) -> Conceptor:
         return la.inv(self)  # type: ignore
 
@@ -75,13 +84,25 @@ class Conceptor(np.ndarray):
         return eye_like(self) - self  # type: ignore
 
     def logic_and(self, other: Conceptor) -> Conceptor:
-        return (self.inv() + other.inv() + eye_like(self)).inv()  # type: ignore
+        return (self.inv + other.inv + eye_like(self)).inv  # type: ignore
 
     def logic_or(self, other: Conceptor) -> Conceptor:
         id = eye_like(self)
         return (
-            id + (self @ (id - self).inv() + other @ (id - other).inv()).inv()  # type: ignore
-        ).inv()
+            id + (self @ (id - self).inv + other @ (id - other).inv).inv  # type: ignore
+        ).inv
+
+    def to_ellipse(self) -> tuple[float, float, float]:
+        assert self.order == 2
+
+        angle = np.arctan2(self[0, 0], self[0, 1])
+        return *la.svd(self)[1], angle  # type: ignore
+
+    def to_ellipse2(self):
+        u, s, _ = la.svd(self)
+        width, height = s * 2
+        angle = cosine_similarity(u @ [1, 0], [1, 0])
+        return width, height, angle
 
 
 # %%
