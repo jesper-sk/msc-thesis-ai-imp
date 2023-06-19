@@ -24,6 +24,10 @@ def cosine_similarity(a: ArrayLike, b: ArrayLike) -> np.ndarray:
     return np.dot(a, b) / (la.norm(a) * la.norm(b))
 
 
+def angle_between_vectors(a: ArrayLike, b: ArrayLike) -> np.ndarray:
+    return np.arccos(cosine_similarity(a, b))
+
+
 def lissajous(a: float, b: float, delta_f: float, range: ArrayLike):
     range = np.asarray(range)
     x = np.sin(a * range + (np.pi / delta_f))
@@ -106,6 +110,23 @@ class Conceptor(np.ndarray):
         width, height = s * 2
         angle = cosine_similarity(u @ [1, 0], [1, 0])
         return width, height, angle
+
+    def to_ellipsoid(self):
+        """https://en.wikipedia.org/wiki/Ellipsoid#As_a_quadric"""
+        assert self.order in [2, 3]
+
+        eigenvalues, eigenvectors = la.eig(self)
+        semiaxes = tuple(eigenvalues ** (-0.5))
+
+        if self.order == 2:
+            ellipse_principal_axis_x = eigenvectors[:, 0]
+            unit_axis_x = np.array([0, 1])
+
+            angle_rad = angle_between_vectors(ellipse_principal_axis_x, unit_axis_x)
+        else:
+            raise NotImplementedError()
+
+        return semiaxes, angle_rad
 
 
 # %%

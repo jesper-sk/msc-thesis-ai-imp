@@ -45,23 +45,16 @@ class Vectorise(Command):
 
     @staticmethod
     def run(args: Namespace) -> None:
-        from pathlib import Path
-
         import numpy as np
 
         from ..data import coarsewsd20 as cwsd
-        from ..util.path import is_valid_directory
+        from ..util.path import validate_and_create_dir
         from ..vectorise import vectorise_coarsewsd20
         from ..vectorise.bert import BertVectoriser
 
-        out_path = Path(args.out if args.out else f"./out/vectorised/{args.model}")
-        assert is_valid_directory(out_path)
-
-        dataset = cwsd.load_dataset(cwsd.Variant.REGULAR)
         vectoriser = BertVectoriser(model_name_or_path=args.model, device=args.device)
-
-        out_path.resolve()
-        out_path.mkdir(exist_ok=True, parents=True)
+        dataset = cwsd.load_dataset(cwsd.Variant.REGULAR)
+        out_path = validate_and_create_dir(args.out or f"./out/vectorised/{args.model}")
 
         for key, embedding in vectorise_coarsewsd20(
             vectoriser, dataset, args.batchsize
