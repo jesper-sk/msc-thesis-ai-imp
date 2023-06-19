@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 import numpy._typing as tp
 import numpy.linalg as la
-from numpy._typing import NDArray
+from numpy._typing import ArrayLike, NDArray
 
 ArrayLikeFloat = tp._ArrayLikeFloat_co
 
@@ -20,11 +20,11 @@ def eye_like(arr: np.ndarray, dtype=None) -> np.ndarray:
     return np.eye(arr.shape[0], dtype=dtype)
 
 
-def cosine_similarity(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def cosine_similarity(a: ArrayLike, b: ArrayLike) -> np.ndarray:
     return np.dot(a, b) / (la.norm(a) * la.norm(b))
 
 
-def lissajous(a, b, delta_f, range):
+def lissajous(a: float, b: float, delta_f: float, range: ArrayLike):
     range = np.asarray(range)
     x = np.sin(a * range + (np.pi / delta_f))
     y = np.sin(b * range)
@@ -44,10 +44,11 @@ class Conceptor(np.ndarray):
     ):
         correlation_matrix = np.asarray(correlation_matrix)
         assert is_square_matrix(correlation_matrix)
+
+        aperture_matrix = (aperture ** (-2)) * eye_like(correlation_matrix)
+
         conceptor_matrix = (
-            la.inv(correlation_matrix + aperture ** (-2) * eye_like(correlation_matrix))
-            @ correlation_matrix
-            + 1e-10
+            la.inv(correlation_matrix + aperture_matrix) @ correlation_matrix + 1e-10
         )
 
         return Conceptor(conceptor_matrix, aperture)
@@ -99,6 +100,8 @@ class Conceptor(np.ndarray):
         return *la.svd(self)[1], angle  # type: ignore
 
     def to_ellipse2(self):
+        assert self.order == 2
+
         u, s, _ = la.svd(self)
         width, height = s * 2
         angle = cosine_similarity(u @ [1, 0], [1, 0])
