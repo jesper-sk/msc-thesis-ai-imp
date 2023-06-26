@@ -6,7 +6,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from ..data import coarsewsd20 as cwsd
-from ..util.path import is_valid_directory
+from ..util.path import validate_and_create_dir, validate_existing_dir
 from .command import Command
 
 
@@ -34,14 +34,10 @@ class PrepEwiser(Command):
 
     @staticmethod
     def run(args: Namespace) -> None:
-        data_path = args.path
-        assert data_path is None or is_valid_directory(data_path, True)
+        data_path = validate_existing_dir(args.path or cwsd.DATA_ROOT)
+        out_path = validate_and_create_dir(args.out)
 
-        out_path = args.out
-        assert is_valid_directory(out_path)
-        out_path.resolve().mkdir(exist_ok=True)
-
-        data = cwsd.load_dataset(cwsd.Variant.REGULAR, data_path or cwsd.DATA_ROOT)
+        data = cwsd.load_dataset(cwsd.Variant.REGULAR, data_path)
 
         sentences = []
         info = []
