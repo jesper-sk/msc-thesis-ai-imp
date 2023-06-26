@@ -1,6 +1,7 @@
 # %%
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -20,11 +21,11 @@ def eye_like(arr: np.ndarray, dtype=None) -> np.ndarray:
     return np.eye(arr.shape[0], dtype=dtype)
 
 
-def cosine_similarity(a: ArrayLike, b: ArrayLike) -> np.ndarray:
+def cosine_similarity(a: ArrayLike, b: ArrayLike) -> float:
     return np.dot(a, b) / (la.norm(a) * la.norm(b))
 
 
-def angle_between_vectors(a: ArrayLike, b: ArrayLike) -> np.ndarray:
+def angle_between_vectors(a: ArrayLike, b: ArrayLike) -> float:
     return np.arccos(cosine_similarity(a, b))
 
 
@@ -33,6 +34,22 @@ def lissajous(a: float, b: float, delta_f: float, range: ArrayLike):
     x = np.sin(a * range + (np.pi / delta_f))
     y = np.sin(b * range)
     return np.hstack((x[:, None], y[:, None]))
+
+
+@dataclass
+class Ellipse:
+    semiaxis_x: float
+    semiaxis_y: float
+    angle: float
+
+
+@dataclass
+class Ellipsoid:
+    semiaxis_x: float
+    semiaxis_y: float
+    semiaxis_z: float
+    polar_angle: float
+    azimuthal_angle: float
 
 
 class Conceptor(np.ndarray):
@@ -97,12 +114,6 @@ class Conceptor(np.ndarray):
             id + (self @ (id - self).inv + other @ (id - other).inv).inv  # type: ignore
         ).inv
 
-    def to_ellipse(self) -> tuple[float, float, float]:
-        assert self.order == 2
-
-        angle = np.arctan2(self[0, 0], self[0, 1])
-        return *la.svd(self)[1], angle  # type: ignore
-
     def to_ellipse_params(self) -> tuple[float, float, float]:
         """Returns ellipse parameters (a, b, theta) for the conceptor. Note that the
         conceptor must be of order 2.
@@ -138,22 +149,19 @@ class Conceptor(np.ndarray):
         angle = cosine_similarity(u @ [1, 0], [1, 0])
         return width, height, angle
 
-    def to_ellipsoid(self):
+    def to_ellipse(self) -> Ellipse:
         """https://en.wikipedia.org/wiki/Ellipsoid#As_a_quadric"""
-        assert self.order in [2, 3]
+        assert self.order == 2
 
         eigenvalues, eigenvectors = la.eig(self)
         semiaxes = tuple(eigenvalues ** (-0.5))
 
-        if self.order == 2:
-            ellipse_principal_axis_x = eigenvectors[:, 0]
-            unit_axis_x = np.array([0, 1])
+        ellipse_principal_axis_x = eigenvectors[:, 0]
+        unit_axis_x = np.array([0, 1])
 
-            angle_rad = angle_between_vectors(ellipse_principal_axis_x, unit_axis_x)
-        else:
-            raise NotImplementedError()
+        angle_rad = angle_between_vectors(ellipse_principal_axis_x, unit_axis_x)
 
-        return semiaxes, angle_rad
+        return Ellipse(semiaxes[0], semiaxes[1], angle_rad)
 
 
 # %%
