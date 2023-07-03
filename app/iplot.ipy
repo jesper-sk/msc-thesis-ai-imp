@@ -2,18 +2,36 @@
 import warnings
 
 import matplotlib.pyplot as plt
-from matplotlib.patches import Ellipse
 import numpy as np
+from matplotlib.patches import Ellipse as MEllipse
 
-from wsd.conceptors import Conceptor
+from wsd.conceptors.conceptor import Conceptor, Ellipse
+from wsd.util.angle import rad_to_deg
 
 warnings.filterwarnings("ignore")
-%matplotlib ipympl
-plt.ion()
 
-#%%
-ell1 = Ellipse((0,0), 10, 3, 47)
-ell2 = Ellipse((0,0), 4, 6, 284)
+
+def plot_ellipse(ell: Ellipse, *ells: Ellipse):
+    fig, ax = plt.subplots()
+    plt.xlim([-1, 1])
+    plt.ylim([-1, 1])
+
+    colors = ["red", "blue", "green", "purple", "yellow", "orange"]
+
+    for idx, ellipses in enumerate([ell] + list(ells)):
+        p = ax.add_patch(
+            MEllipse((0, 0), ell.semiaxis_x, ell.semiaxis_x, rad_to_deg(ell.angle))
+        )
+        p.set_edgecolor(colors[idx])
+        p.set_color(colors[idx])
+        p.set_alpha(0.6)
+
+    plt.show()
+
+
+# %%
+ell1 = Ellipse((0, 0), 10, 3, 47)
+ell2 = Ellipse((0, 0), 4, 6, 284)
 
 fig, ax = plt.subplots()
 plt.xlim([-6, 6])
@@ -21,14 +39,14 @@ plt.ylim([-6, 6])
 
 
 p1 = ax.add_patch(ell1)
-p1.set_edgecolor('red')
-p1.set_color('red')
+p1.set_edgecolor("red")
+p1.set_color("red")
 p1.set_alpha(0.6)
 
 
 p2 = ax.add_patch(ell2)
-p2.set_edgecolor('blue')
-p2.set_color('blue')
+p2.set_edgecolor("blue")
+p2.set_color("blue")
 p2.set_alpha(0.6)
 
 # %%

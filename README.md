@@ -21,6 +21,11 @@
     pipenv run python app
     ```
 
+## Running unit tests
+Run: 
+```sh
+pipenv run python -m unittest discover tests "*.py"
+```
 
 ## Static analysers in use
 1. Black code formatter

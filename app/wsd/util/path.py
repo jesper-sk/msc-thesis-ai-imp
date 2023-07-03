@@ -18,7 +18,7 @@ def validate_and_create_dir(path: Path | str) -> Path:
         )
 
     path = Path(path).resolve()
-    path.mkdir(exist_ok=True)
+    path.mkdir(parents=True, exist_ok=True)
 
     return path
 

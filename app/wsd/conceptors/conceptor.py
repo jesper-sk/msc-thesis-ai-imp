@@ -17,6 +17,10 @@ def is_square_matrix(arr: NDArray[Any]):
     return len(shape) == 2 and shape[0] == shape[1]
 
 
+def is_symmetric_matrix(arr: NDArray[Any], rtol=1e-05, atol=1e-08):
+    return np.allclose(arr, arr.T, rtol, atol)
+
+
 def eye_like(arr: np.ndarray, dtype=None) -> np.ndarray:
     return np.eye(arr.shape[0], dtype=dtype)
 
@@ -54,15 +58,13 @@ class Ellipsoid:
 
 class Conceptor(np.ndarray):
     @staticmethod
-    def from_state_matrix(matrix: ArrayLikeFloat, aperture: float = 20):
+    def from_state_matrix(matrix: ArrayLikeFloat, aperture: float = 10):
         correlation_matrix = np.corrcoef(np.asarray(matrix).T)
 
         return Conceptor.from_correlation_matrix(correlation_matrix, aperture)
 
     @staticmethod
-    def from_correlation_matrix(
-        correlation_matrix: NDArray[Any], aperture: float = 0.1
-    ):
+    def from_correlation_matrix(correlation_matrix: NDArray[Any], aperture: float = 10):
         correlation_matrix = np.asarray(correlation_matrix)
         assert is_square_matrix(correlation_matrix)
 
@@ -102,17 +104,24 @@ class Conceptor(np.ndarray):
     def inv(self) -> Conceptor:
         return la.inv(self)  # type: ignore
 
+    @property
     def neg(self) -> Conceptor:
         return eye_like(self) - self  # type: ignore
 
-    def con(self, other: Conceptor) -> Conceptor:
+    def conj(self, other: Conceptor) -> Conceptor:
         return (self.inv + other.inv + eye_like(self)).inv  # type: ignore
 
-    def dis(self, other: Conceptor) -> Conceptor:
+    def disj(self, other: Conceptor) -> Conceptor:
         id = eye_like(self)
         return (
             id + (self @ (id - self).inv + other @ (id - other).inv).inv  # type: ignore
         ).inv
+
+    def set_aperture(self, aperture) -> None:
+        assert hasattr(self, "aperture")
+
+        ratio = aperture / self.aperture
+        self = self @ (self + (ratio**2 * self.neg).inv)
 
     def to_ellipse_params(self) -> tuple[float, float, float]:
         """Returns ellipse parameters (a, b, theta) for the conceptor. Note that the
@@ -162,6 +171,46 @@ class Conceptor(np.ndarray):
         angle_rad = angle_between_vectors(ellipse_principal_axis_x, unit_axis_x)
 
         return Ellipse(semiaxes[0], semiaxes[1], angle_rad)
+
+
+def loewner(a: Conceptor, b: Conceptor, tol: float = 1e-8) -> int:
+    """Checks whether the given two conceptors are loewner-ordered.
+
+    Parameters
+    ----------
+    a : Conceptor
+        The first conceptor
+    b : Conceptor
+        The second conceptor
+    tol : float, optional
+        The floating-point comparison tolerance, by default 1e-8
+
+    Returns
+    -------
+    int
+        1 iff a >= b; -1 iff a <= b; 0 if no loewner ordering is present between a and b
+    """
+    diff = a - b
+    diff_eigvals = la.eigvals(diff)
+    if np.all(diff_eigvals + tol >= 0):
+        return 1
+    if np.all(diff_eigvals - tol <= 0):
+        return -1
+    return 0
+
+
+def conj(c1: Conceptor, *conceptors: Conceptor):
+    ret = c1
+    for c in conceptors:
+        ret = ret.conj(c)
+    return ret
+
+
+def disj(c1: Conceptor, *conceptors: Conceptor):
+    ret = c1
+    for c in conceptors:
+        ret = ret.disj(c)
+    return ret
 
 
 # %%
