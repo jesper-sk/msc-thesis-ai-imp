@@ -18,7 +18,9 @@
         "editor.codeActionsOnSave": {
             "source.organizeImports": true
         },
-        "editor.rulers": [90]
+        "editor.rulers": [
+            90
+        ]
     },
     "python.analysis.typeCheckingMode": "basic",
     "python.linting.pylintEnabled": false,
@@ -31,5 +33,7 @@
     "python.analysis.extraPaths": [
         "./repos/ewiser"
     ],
-    "autoDocstring.docstringFormat": "numpy"
+    "autoDocstring.docstringFormat": "numpy",
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "black"
 }

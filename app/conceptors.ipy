@@ -2,54 +2,64 @@
 import warnings
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
+import umap
+from matplotlib.patches import Ellipse as MEllipse
 
-from wsd.data import coarsewsd20 as cwsd
+from wsd.conceptors.conceptor import Conceptor, Ellipse
+from wsd.util.angle import rad_to_deg
 
 warnings.filterwarnings("ignore")
 
-data = cwsd.load_dataset(cwsd.Variant.REGULAR, "../data/CoarseWSD-20")
+path = Path("../out/split/bert-base-uncased")
+senses = list(path.glob("*.npy"))
 
 
-def load_npy(
-    word: cwsd.Word,
-    split=None,
-    path: Path = Path("../out/vectorised/sensebert-base-uncased"),
-):
-    if split:
-        return np.load(path / f"{word}.{split}.npy")
-    return np.concatenate(
-        (np.load(path / f"{word}.train.npy"), np.load(path / f"{word}.test.npy"))
-    )
+def load_sense_embs(idx: int):
+    print(senses[idx].stem)
+    return np.load(senses[idx])
 
 
-def load_word(word: cwsd.Word, split=None):
-    embeddings = load_npy(word, split)
-    class_ids = np.array(data[word].vertical(split).target_class_ids)
-    classes = data[word].classes
-
-    ret = {}
-    for current_id in np.unique(class_ids):
-        class_embeddings = embeddings[class_ids == current_id]
-        ret[classes[str(current_id)]] = conceptor_from(class_embeddings.T)
-
-    return ret
+def conceptor(idx: int, aperture: float):
+    return Conceptor.from_state_matrix(load_sense_embs(idx), aperture)
 
 
-def conceptor_from(embeddings: np.ndarray, aperture: float = 1):
-    correlation_matrix = np.corrcoef(embeddings)
-    scaled_identity = np.eye(len(correlation_matrix)) * aperture**-2
+def conceptor2d(idx: int, aperture=1):
+    emb = load_sense_embs(idx)
+    emb2d = umap.UMAP().fit_transform(emb)
+    return Conceptor.from_state_matrix(emb2d, aperture)
 
-    return correlation_matrix @ np.linalg.inv(correlation_matrix + scaled_identity)
+
+def plot_ellipse(ell: Ellipse | Conceptor, *ells: Ellipse | Conceptor):
+    fig, ax = plt.subplots()
+    plt.xlim([-1, 1])
+    plt.ylim([-1, 1])
+
+    colors = ["red", "blue", "green", "purple", "yellow", "orange"]
+
+    for idx, item in enumerate([ell] + list(ells)):
+        ellipse = item if isinstance(item, Ellipse) else item.to_ellipse()
+
+        p = ax.add_patch(
+            MEllipse(
+                (0, 0),
+                ellipse.semiaxis_x,
+                ellipse.semiaxis_y,
+                rad_to_deg(ellipse.angle),
+            )
+        )
+        p.set_edgecolor(colors[idx])
+        p.set_color(colors[idx])
+        p.set_alpha(0.6)
+
+    plt.show()
 
 
-# %% Save all conceptors
+def plot_eigs(c: Conceptor):
+    eigs = np.linalg.eigvalsh(c)
+    plt.plot(sorted(eigs))
+    # plt.yscale('log')
 
-for word in cwsd.WORDS:
-    print(word)
-    np.save(
-        f"../out/vectorised/bert-base-uncased/{word}.conceptor+a1.npy",
-        load_word(word),
-    )
 
 # %%

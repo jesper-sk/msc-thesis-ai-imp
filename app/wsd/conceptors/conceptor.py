@@ -58,8 +58,13 @@ class Ellipsoid:
 
 class Conceptor(np.ndarray):
     @staticmethod
-    def from_state_matrix(matrix: ArrayLikeFloat, aperture: float = 10):
-        correlation_matrix = np.corrcoef(np.asarray(matrix).T)
+    def from_state_matrix(matrix: ArrayLikeFloat, aperture: float = 10, axis: int = 0):
+        matrix = np.asarray(matrix)
+        if axis == 0:
+            matrix = matrix.T
+        # correlation_matrix = np.corrcoef(np.asarray(matrix).T)
+        sample_count = matrix.shape[0]
+        correlation_matrix = (matrix @ matrix.T) / sample_count
 
         return Conceptor.from_correlation_matrix(correlation_matrix, aperture)
 
