@@ -1,6 +1,7 @@
 # %%
 from __future__ import annotations
 
+import itertools as it
 from dataclasses import dataclass
 from typing import Any
 
@@ -76,7 +77,7 @@ class Conceptor(np.ndarray):
         aperture_matrix = (aperture ** (-2)) * eye_like(correlation_matrix)
 
         conceptor_matrix = (
-            la.inv(correlation_matrix + aperture_matrix) @ correlation_matrix + 1e-10
+            la.inv(correlation_matrix + aperture_matrix) @ correlation_matrix
         )
 
         return Conceptor(conceptor_matrix, aperture)
@@ -128,49 +129,38 @@ class Conceptor(np.ndarray):
         ratio = aperture / self.aperture
         self = self @ (self + (ratio**2 * self.neg).inv)
 
-    def to_ellipse_params(self) -> tuple[float, float, float]:
-        """Returns ellipse parameters (a, b, theta) for the conceptor. Note that the
-        conceptor must be of order 2.
+    def _make_ellipsoid(self, principal_axes, rotation, resolution) -> np.ndarray:
+        u = np.linspace(0.0, 2.0 * np.pi, resolution)
+        v = np.linspace(0.0, np.pi, resolution)
 
-        Returns
-        -------
-        tuple[float, float, float]
-            Ellipse parameters (a, b, theta) for the conceptor.
+        x = principal_axes[0] * np.outer(np.cos(u), np.sin(v))
+        y = principal_axes[1] * np.outer(np.sin(u), np.sin(v))
+        z = principal_axes[2] * np.outer(np.ones_like(u), np.cos(v))
+        ellipsoid = np.stack((x, y, z), axis=-1)
 
-        Explanation
-        -----------
-        The principal axes of the ellipse are the eigenvectors of the conceptor. The
-        lengths of the principal axes are the square roots of the eigenvalues of the
-        conceptor. The angle of rotation of the ellipse is the angle between the first
-        principal axis and the x-axis.
+        if self.order > 3:
+            rotation = rotation[:3, :3]
 
-        References
-        ----------
-        - [1] https://en.wikipedia.org/wiki/Ellipse#General_ellipse
-        - [2] https://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors
-        - [3] https://math.stackexchange.com/questions/612981/find-angle-at-given-points-in-ellipse
-        """
-        assert self.order == 2
+        return (ellipsoid @ rotation).transpose(2, 0, 1)
 
-        s = la.svd(self)[1]
-        return s[0], s[1], np.arctan2(self[1, 0], self[0, 0])
+    def ellipsoid(self, resolution: int = 100) -> np.ndarray:
+        _, s, rotation = la.svd(self)
+        return self._make_ellipsoid(1.0 / np.sqrt(s), rotation, resolution)
 
-    def to_ellipse2(self):
-        assert self.order == 2
+    def ellipsoid_unit(self, resolution: int = 100) -> np.ndarray:
+        _, s, rotation = la.svd(self)
+        return self._make_ellipsoid(s, rotation, resolution)
 
-        u, s, _ = la.svd(self)
-        width, height = s * 2
-        angle = cosine_similarity(u @ [1, 0], [1, 0])
-        return width, height, angle
+    def ellipsoid_sqrt(self, resolution: int = 100) -> np.ndarray:
+        _, s, rotation = la.svd(self)
+        return self._make_ellipsoid(np.sqrt(s), rotation, resolution)
 
-    def to_ellipse(self) -> Ellipse:
+    def ellipse(self) -> Ellipse:
         """https://en.wikipedia.org/wiki/Ellipsoid#As_a_quadric"""
-        assert self.order == 2
-
         eigenvalues, eigenvectors = la.eig(self)
-        semiaxes = tuple(eigenvalues ** (-0.5))
+        semiaxes = tuple(eigenvalues)
 
-        ellipse_principal_axis_x = eigenvectors[:, 0]
+        ellipse_principal_axis_x = eigenvectors[:2, 0]
         unit_axis_x = np.array([0, 1])
 
         angle_rad = angle_between_vectors(ellipse_principal_axis_x, unit_axis_x)
@@ -178,7 +168,7 @@ class Conceptor(np.ndarray):
         return Ellipse(semiaxes[0], semiaxes[1], angle_rad)
 
 
-def loewner(a: Conceptor, b: Conceptor, tol: float = 1e-8) -> int:
+def loewner(a: Conceptor, b: Conceptor, tol: float = 1e-3) -> int:
     """Checks whether the given two conceptors are loewner-ordered.
 
     Parameters

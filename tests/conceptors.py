@@ -116,7 +116,7 @@ class TestConceptors(unittest.TestCase):
         a = self.make_conceptor(10, aperture=1.2)
 
         b = a.copy()
-        b.set_aperture(5.4)
+        b.set_aperture(1000)
         b.set_aperture(1.2)
 
         self.assertTrue(
