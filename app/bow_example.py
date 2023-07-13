@@ -17,9 +17,8 @@ path = Path("../out/split/bert-base-uncased")
 senses = list(path.glob("*.npy"))
 
 
-def embeddings(idx: int):
-    print(senses[idx].stem)
-    return np.load(senses[idx])
+def embeddings(stem: str):
+    return np.load([sense for sense in senses if sense.stem.strip() == stem][0])
 
 
 conceptor = Conceptor.from_state_matrix
@@ -108,7 +107,7 @@ def cutoff(diff: Conceptor, tol=1e-3):
     neg_amount = where_neg[-1] if len(where_neg) > 0 else 0
     pos_cutoff = where_pos[0] if len(where_pos) > 0 else len(eigs)
 
-    return ((neg_amount + pos_cutoff) / len(eigs)) - 1
+    return (((neg_amount + pos_cutoff) / len(eigs)) - 1) * -1
 
 
 eigvals = np.linalg.eigvals
@@ -152,11 +151,11 @@ def loewner(diff: Conceptor, tol: float = 1e-3) -> int:
 
 # %% Load
 print("Embeddings...")
-emb_music = embeddings(9)
-emb_ship = embeddings(10)
-emb_arrow = embeddings(11)
-emb_ap_inc = embeddings(0)
-emb_ap_frt = embeddings(1)
+emb_music = embeddings("bow_bow_(music)")
+emb_ship = embeddings("bow_bow_(ship)")
+emb_arrow = embeddings("bow_bow_and_arrow")
+emb_ap_inc = embeddings("apple_apple")
+emb_ap_frt = embeddings("apple_apple_inc.")
 emb_all = np.concatenate((emb_music, emb_ship, emb_arrow))
 
 
@@ -246,4 +245,9 @@ print("co_ship - conj(co_music, co_arrow)")
 conj = co_music.conj(co_arrow)
 heurs(co_ship, conj)
 plt.plot(sorted_eigvals(co_ship - conj), color="purple")
+
+print("co_music - disj(co_ship, co_arrow)")
+conj = co_ship.disj(co_arrow)
+heurs(co_music, conj)
+plt.plot(sorted_eigvals(co_music - conj), color="yellow")
 # %%
