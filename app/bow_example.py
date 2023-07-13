@@ -1,11 +1,10 @@
-# %%
+# %% Start
 import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-# import umap
+import numpy.linalg as la
 from matplotlib.patches import Ellipse as MEllipse
 from sklearn.decomposition import PCA
 
@@ -23,14 +22,7 @@ def embeddings(idx: int):
     return np.load(senses[idx])
 
 
-def conceptor(idx: int, aperture: float):
-    return Conceptor.from_state_matrix(embeddings(idx), aperture)
-
-
-def conceptor2d(idx: int, aperture=1):
-    emb = embeddings(idx)
-    emb2d = umap.UMAP().fit_transform(emb)
-    return Conceptor.from_state_matrix(emb2d, aperture)
+conceptor = Conceptor.from_state_matrix
 
 
 def plot_ellipses(ell: Ellipse | Conceptor, *ells: Ellipse | Conceptor):
@@ -86,11 +78,85 @@ def plot_eigs(c: Conceptor):
     # plt.yscale('log')
 
 
-# %% Load data
+def weighted_eigsum(diff: np.ndarray):
+    eigs = np.linalg.eigvalsh(diff)
+    return eigs.sum() / len(eigs)
+
+
+def posneg_fraction(diff: Conceptor, tol=1e-3, do_print=True):
+    eigs = np.sort(np.linalg.eigvals(diff))
+    where_neg = np.argwhere(eigs < -tol)
+    where_pos = np.argwhere(eigs > tol)
+
+    neg_amount = where_neg[-1] if len(where_neg) > 0 else 0
+    pos_cutoff = where_pos[0] if len(where_pos) > 0 else len(eigs)
+    pos_amount = len(eigs) - pos_cutoff
+
+    if do_print:
+        print(
+            f"pos: {pos_amount}, neg: {neg_amount}, zero: {len(eigs) - (pos_amount + neg_amount)}"
+        )
+
+    return ((2 * pos_amount) / (neg_amount + pos_amount)) - 1
+
+
+def cutoff(diff: Conceptor, tol=1e-3):
+    eigs = np.sort(np.linalg.eigvals(diff))
+    where_neg = np.argwhere(eigs < -tol)
+    where_pos = np.argwhere(eigs > tol)
+
+    neg_amount = where_neg[-1] if len(where_neg) > 0 else 0
+    pos_cutoff = where_pos[0] if len(where_pos) > 0 else len(eigs)
+
+    return ((neg_amount + pos_cutoff) / len(eigs)) - 1
+
+
+eigvals = np.linalg.eigvals
+sorted_eigvals = lambda x: sorted(np.linalg.eigvals(x))
+
+
+def sigvals(x: np.ndarray):
+    return np.linalg.svd(x)[1]
+
+
+def plot_corr_sigvals(embs):
+    corr_music = (embs.T @ embs) / len(embs)
+    plt.plot(sigvals(corr_music))
+    plt.yscale("log")
+
+
+def loewner(diff: Conceptor, tol: float = 1e-3) -> int:
+    """Checks whether the given two conceptors are loewner-ordered.
+
+    Parameters
+    ----------
+    a : Conceptor
+        The first conceptor
+    b : Conceptor
+        The second conceptor
+    tol : float, optional
+        The floating-point comparison tolerance, by default 1e-8
+
+    Returns
+    -------
+    int
+        1 iff a >= b; -1 iff a <= b; 0 if no loewner ordering is present between a and b
+    """
+    diff_eigvals = la.eigvals(diff)
+    if np.all(diff_eigvals + tol >= 0):
+        return 1
+    if np.all(diff_eigvals - tol <= 0):
+        return -1
+    return 0
+
+
+# %% Load
 print("Embeddings...")
 emb_music = embeddings(9)
 emb_ship = embeddings(10)
 emb_arrow = embeddings(11)
+emb_ap_inc = embeddings(0)
+emb_ap_frt = embeddings(1)
 emb_all = np.concatenate((emb_music, emb_ship, emb_arrow))
 
 
@@ -104,68 +170,80 @@ def emb_class(idx):
 
 emb_classes = [emb_class(idx) for idx in range(len(emb_all))]
 
-aperture = 0.07
+aperture = 0.3
 
 print("Conceptors...")
-co_music = Conceptor.from_state_matrix(emb_music, aperture)
-co_ship = Conceptor.from_state_matrix(emb_ship, aperture)
-co_arrow = Conceptor.from_state_matrix(emb_arrow, aperture)
+co_music = conceptor(emb_music, aperture)
+co_ship = conceptor(emb_ship, aperture)
+co_arrow = conceptor(emb_arrow, aperture)
+co_ap_inc = conceptor(emb_ap_inc, aperture)
+co_ap_frt = conceptor(emb_ap_frt, aperture)
 
-co2_music = Conceptor.from_state_matrix(emb_music[:, :2], 0.07)
-co2_ship = Conceptor.from_state_matrix(emb_ship[:, :2], 0.07)
-co2_arrow = Conceptor.from_state_matrix(emb_arrow[:, :2], 0.07)
-co3_music = Conceptor.from_state_matrix(emb_music[:, :3], 0.07)
-co3_ship = Conceptor.from_state_matrix(emb_ship[:, :3], 0.07)
-co3_arrow = Conceptor.from_state_matrix(emb_arrow[:, :3], 0.07)
+co2_music = conceptor(emb_music[:, :2], 0.07)
+co2_ship = conceptor(emb_ship[:, :2], 0.07)
+co2_arrow = conceptor(emb_arrow[:, :2], 0.07)
+co3_music = conceptor(emb_music[:, :3], 0.07)
+co3_ship = conceptor(emb_ship[:, :3], 0.07)
+co3_arrow = conceptor(emb_arrow[:, :3], 0.07)
 
 # %% UMAP scatter
+import umap
+
 colors = {
     "music": "red",
     "ship": "blue",
     "arrow": "green",
 }
+emb2d_all = umap.UMAP().fit_transform(emb_all)
 plt.scatter(emb2d_all[:, 0], emb2d_all[:, 1], c=[colors[cl] for cl in emb_classes])
 
-# %% Conceptors
-plot_ellipses(co_music, co_ship, co_arrow)
+# %% Ellipses
+plot_ellipses(co2_music, co2_ship, co2_arrow)
+
+# %% Ellipsoids
+plot_ellipsoids(co3_music, co3_ship, co3_arrow)
+
+# %% Aperture estimation
+# I picked aperture in such a way that the asymptote of f(x) = x / (x + a**-2) is around
+# the max signular value of the embedding correlation matrix (around 3000).
+# Via https://www.desmos.com/calculator/85uh7ezwg0, this is 0.3.
+# Todo: Read up and look at gradient of squared Frobenius norm
+plot_corr_sigvals(emb_music)
+plot_corr_sigvals(emb_ship)
+plot_corr_sigvals(emb_arrow)
+
+# %%
+plt.plot(sigvals(co_music))
+plt.yscale("log")
+# %%
+plt.plot(sorted_eigvals(co_music - co_ship))
+print(f"len(emb_music): {len(emb_music)}; len(emb_ship): {len(emb_ship)}")
+posneg_fraction(co_music - co_ship)
 
 
 # %%
-def weighted_eigsum(diff: np.ndarray):
-    eigs = np.linalg.eigvalsh(diff)
-    return eigs.sum() / len(eigs)
+def heurs(c1, c2):
+    print(f"Loewner: {loewner(c1-c2)}")
+    print(f"weighted eigsum: {weighted_eigsum(c1-c2):.2f}")
+    print(f"posneg_ratio: {posneg_fraction(c1-c2, do_print=False)}")
+    print(f"cutoff: {cutoff(c1-c2)}")
+    print()
 
 
-def posneg_fraction(diff: Conceptor, tol=1e-3):
-    eigs = np.sort(np.linalg.eigvals(diff))
-    neg_amount = np.argwhere(eigs < -tol)[-1]
-    pos_cutoff = np.argwhere(eigs > tol)[0]
-    pos_amount = len(eigs) - pos_cutoff
+print("co_music - co_ship")
+heurs(co_music, co_ship)
+plt.plot(sorted_eigvals(co_music - co_ship), color="red")
 
-    print(pos_amount, neg_amount, len(eigs) - (pos_amount + neg_amount))
+print("co_music - co_arrow")
+heurs(co_music, co_arrow)
+plt.plot(sorted_eigvals(co_music - co_arrow), color="green")
 
-    return pos_amount / (neg_amount + pos_amount)
+print("co_music - co_arrow")
+heurs(co_ship, co_arrow)
+plt.plot(sorted_eigvals(co_ship - co_arrow), color="blue")
 
-
-# %%
-eigvals = np.linalg.eigvals
-
-
-def sigvals(x: np.ndarray):
-    return np.linalg.svd(x)[1]
-
-
-# %%
-def plwf(*pts, **kwargs):
-    projection = "2d" if len(pts) == 2 else "3d"
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection=projection)
-    ax.plot_wireframe(*pts, rstride=4, cstride=4, **kwargs)
-    return ax
-
-
-def wf(ax, col, pts):
-    ax.plot_wireframe(*pts, rstride=4, cstride=4, color=col)
-
-
+print("co_ship - conj(co_music, co_arrow)")
+conj = co_music.conj(co_arrow)
+heurs(co_ship, conj)
+plt.plot(sorted_eigvals(co_ship - conj), color="purple")
 # %%

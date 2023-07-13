@@ -114,6 +114,10 @@ class Conceptor(np.ndarray):
     def neg(self) -> Conceptor:
         return eye_like(self) - self  # type: ignore
 
+    @property
+    def quota(self) -> float:
+        return np.trace(self) / self.order
+
     def conj(self, other: Conceptor) -> Conceptor:
         return (self.inv + other.inv + eye_like(self)).inv  # type: ignore
 
