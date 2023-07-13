@@ -37,3 +37,18 @@
   - Some work to format data for 'naive' BERT vectorisation + k-means
   - Does mean EWISER works ootb
   - Probably contains more words from different hierarchies, makes qualititave research easier (i.e. comparison to intuition)
+
+# Meeting 2023 07 13
+
+* Showing off conceptor ellipses and ellipsoids
+* Different kinds of heuristics
+  * Strict loewner
+  * Bricmans weighted eigensum
+  * Ratio positive ~ negative eigenvalues
+  * Positive->negative cutoff point (divided by N)
+* Observation: Eigenvalues of difference matrix kinda similar to difference of eigenvalues (ordered)
+* Observation: If for C1 and C2, we have L1, L2 < N, then there are (N - L1) and (N - L2) zero singular values (logical, amnt of nonzero singvals equal to matrix rank)
+* Observation: Given above, if we take (C1 - C2), and we also have L1 + L2 < N, we have that there are L1 positive eigenvalues and L2 negative eigenvalues in the difference matrix. 
+  * Implication: We probably want to ignore eigenvalues close to zero (floating-point error), as the size of L does not correlate with abstraction.
+* Desmos for aperture values https://www.desmos.com/calculator/85uh7ezwg0
+* Singular values of correlation matrix
