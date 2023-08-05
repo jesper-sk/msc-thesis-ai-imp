@@ -1,13 +1,13 @@
 # %%
 from __future__ import annotations
 
-import itertools as it
 from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 import numpy._typing as tp
 import numpy.linalg as la
+from matplotlib.patches import Ellipse as EllipsePatch
 from numpy._typing import ArrayLike, NDArray
 
 ArrayLikeFloat = tp._ArrayLikeFloat_co
@@ -46,6 +46,9 @@ class Ellipse:
     semiaxis_x: float
     semiaxis_y: float
     angle: float
+
+    def to_patch(self) -> EllipsePatch:
+        return EllipsePatch((0, 0), self.semiaxis_x, self.semiaxis_y, self.angle)
 
 
 @dataclass
@@ -196,6 +199,73 @@ def loewner(a: Conceptor, b: Conceptor, tol: float = 1e-3) -> int:
     if np.all(diff_eigvals - tol <= 0):
         return -1
     return 0
+
+
+def posneg_count_fraction(a: Conceptor, b: Conceptor, tol: float = 1e-3) -> float:
+    """Fuzzy estimator of the loewner ordering between two conceptors, looking only at the
+    amount of positive and negative eigenvalues present in the difference matrix.
+
+    Parameters
+    ----------
+    a : Conceptor
+        The first conceptor
+    b : Conceptor
+        The second conceptor
+    tol : float, optional
+        The bound within values are treated as zero, to account for floating-point
+        imprecision, by default 1e-3
+
+    Returns
+    -------
+    float
+        The fuzzy loewner-ordering estimation. If below zero, then a <= b up to that
+        extent. If above zero, then a >= b up to that extent.
+    """
+    diff = a - b
+    diff_eigvals = np.sort(la.eigvals(diff))
+
+    where_negative = np.argwhere(diff_eigvals < -tol).flatten()
+    where_positive = np.argwhere(diff_eigvals > tol).flatten()
+
+    negative_amount = where_negative[-1] if len(where_negative) > 0 else 0
+    positives_start_idx = where_positive[0] if len(where_positive) > 0 else 0
+    positive_amount = len(diff_eigvals) - positives_start_idx
+
+    fraction = positive_amount / (positive_amount + negative_amount)
+    return 2 * fraction - 1
+
+
+def posneg_magnitude_fraction(a: Conceptor, b: Conceptor, tol: float = 1e-3) -> float:
+    """Fuzzy estimator of the loewner ordering between two conceptors, looking at the
+    magnitude of all nonzero
+
+    Parameters
+    ----------
+    a : Conceptor
+        The first conceptor
+    b : Conceptor
+        The second conceptor
+    tol : float, optional
+        The bound within values are treated as zero, to account for floating-point
+        imprecision, by default 1e-3
+
+    Returns
+    -------
+    float
+        The fuzzy loewner-ordering estimation. If below zero, then a <= b up to that
+        extent. If above zero, then a >= b up to that extent.
+    """
+    diff = a - b
+    diff_eigvals = np.sort(la.eigvals(diff))
+
+    where_negative = np.argwhere(diff_eigvals < -tol)
+    where_positive = np.argwhere(diff_eigvals > tol)
+
+    positive_mean = diff_eigvals[where_positive].sum() if len(where_positive) > 0 else 0
+    negative_mean = diff_eigvals[where_negative].sum() if len(where_negative) > 0 else 0
+
+    fraction = positive_mean / (positive_mean - negative_mean)
+    return 2 * fraction - 1
 
 
 def conj(c1: Conceptor, *conceptors: Conceptor):

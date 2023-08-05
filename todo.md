@@ -1,32 +1,37 @@
 # To do - 2023-06-19
 
+### High
+- Make dataloader for WSD Evaluation Framework (EF)
+- Make/alter command so that we can naively cluster EF with k-means etc
+- Get EWISER clustering for EF up & running (or retrieve pre-clustered EF embeddings)
+- Research hierarchical clustering for conceptors based on fuzzy loewner estimate
+
+### Medium
+
+### Low
+
 ## Conceptors
 
 **Framework test**
-- 2D dimensionality reduction? UMAP --> conceptor?
-- Assertions (is positive semidefinite, represents ellipsoid, etc)
-- Ellipse plot fix (which is it?)
-  - Contact paul bricman?
 - Distance and subsumption metrics
+- 
 
 **Subsumption**
 - Research different heuristics for lowner orderedness 
   - Lowner: X is more abstract than Y iff X-Y is positive semidefinite (i.e., e.g. the eigenvalues of X-Y are nonnegative)
   - Option 1: (Bricman) Use sum of eigenvalues of difference matrix
     - Implies that one negative eigenvalue can be compensated for by another (large) positive eigenvalue
+    - This value is impacted by near-zero eigenvalues, which are not relevant as they relate to unused eigenvalues in the respective conceptors.
   - Option 2: Amount of nonnegative eigenvalues divided by total
     - Or: Where in the graph of ordered eigenvalues does one intersect zero
   - Option 3: 
-- "Dashboard"/ipynb for comparing heuristics/plotting eigenvalues etc? 
-  - Be able to "play" with two ellipses, and see how the changes impact the heuristics
-    - Convert ellipse to matrix representation
+  - Decided to ignore eigenvalues close to zero, as they correspond with the parts of the conceptors that were not used (i.e. there were less embeddings than there was space in the conceptor)
 - Make plot: UMAP of a word's different senses, together with the different conceptors + their overlap
 
 ## Clustering
 
 **EWISER for CoarseWSD-20**
 - Pre-trained ewiser uses WordNet vocab which does not include the correct senses for cwsd, so we need to retrain ewiser for this.
-  - Is this worth the time? Herbert probably thinks not
 
 
 ## Dataset(s)
@@ -37,6 +42,8 @@
   - Some work to format data for 'naive' BERT vectorisation + k-means
   - Does mean EWISER works ootb
   - Probably contains more words from different hierarchies, makes qualititave research easier (i.e. comparison to intuition)
+- I saw no hierarchical ordering in the CoarseWSD-20 dataset. Ergo: We need another dataset! (WSD evaluation Framework)
+  
 
 # Meeting 2023 07 13
 

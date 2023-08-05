@@ -8,7 +8,7 @@ import numpy.linalg as la
 from matplotlib.patches import Ellipse as MEllipse
 from sklearn.decomposition import PCA
 
-from wsd.conceptors.conceptor import Conceptor, Ellipse
+from wsd.conceptors.conceptor import *
 from wsd.util.angle import rad_to_deg
 
 warnings.filterwarnings("ignore")
@@ -108,6 +108,17 @@ def cutoff(diff: Conceptor, tol=1e-3):
     pos_cutoff = where_pos[0] if len(where_pos) > 0 else len(eigs)
 
     return (((neg_amount + pos_cutoff) / len(eigs)) - 1) * -1
+
+
+def nonzero_mean(diff: Conceptor, tol=1e-3):
+    eigs = np.sort(np.linalg.eigvals(diff))
+    where_neg = np.argwhere(eigs < -tol)
+    where_pos = np.argwhere(eigs > tol)
+
+    pos_mean = eigs[where_pos].mean() if len(where_pos) > 0 else 0
+    neg_mean = eigs[where_neg].mean() if len(where_neg) > 0 else 0
+
+    return ((2 * pos_mean) / (pos_mean - neg_mean)) - 1
 
 
 eigvals = np.linalg.eigvals
@@ -224,30 +235,47 @@ posneg_fraction(co_music - co_ship)
 def heurs(c1, c2):
     print(f"Loewner: {loewner(c1-c2)}")
     print(f"weighted eigsum: {weighted_eigsum(c1-c2):.2f}")
-    print(f"posneg_ratio: {posneg_fraction(c1-c2, do_print=False)}")
-    print(f"cutoff: {cutoff(c1-c2)}")
-    print()
+    print(f"posneg_ratio: {posneg_fraction(c1-c2, do_print=False)[0]:.2f}")
+    print(f"cutoff: {cutoff(c1-c2)[0]:.2f}")
+    print(f"posneg_mean: {nonzero_mean(c1-c2):.2f}")
+    print(f"pncf: {posneg_count_fraction(c1, c2):.2f}")
+    print(f"pnmf: {posneg_magnitude_fraction(c1, c2):.2f}")
 
 
-print("co_music - co_ship")
+# %%
+print("co_music - co_ship (red)")
 heurs(co_music, co_ship)
-plt.plot(sorted_eigvals(co_music - co_ship), color="red")
+x = sorted_eigvals(co_music - co_ship)
+plt.plot(x, color="red")
+plt.hlines(0, 0, len(x), linestyles="--")
 
-print("co_music - co_arrow")
+# %%
+print("co_music - co_arrow (green)")
 heurs(co_music, co_arrow)
-plt.plot(sorted_eigvals(co_music - co_arrow), color="green")
+x = sorted_eigvals(co_music - co_arrow)
+plt.plot(x, color="red")
+plt.hlines(0, 0, len(x), linestyles="--")
 
-print("co_music - co_arrow")
+# %%
+print("co_ship - co_arrow (blue)")
 heurs(co_ship, co_arrow)
-plt.plot(sorted_eigvals(co_ship - co_arrow), color="blue")
+x = sorted_eigvals(co_ship - co_arrow)
+plt.plot(x, color="red")
+plt.hlines(0, 0, len(x), linestyles="--")
 
-print("co_ship - conj(co_music, co_arrow)")
+# %%
+print("co_ship - conj(co_music, co_arrow) (purple)")
 conj = co_music.conj(co_arrow)
 heurs(co_ship, conj)
-plt.plot(sorted_eigvals(co_ship - conj), color="purple")
+x = sorted_eigvals(co_ship - conj)
+plt.plot(x, color="red")
+plt.hlines(0, 0, len(x), linestyles="--")
 
-print("co_music - disj(co_ship, co_arrow)")
-conj = co_ship.disj(co_arrow)
-heurs(co_music, conj)
-plt.plot(sorted_eigvals(co_music - conj), color="yellow")
+# %%
+print("co_music - disj(co_ship, co_arrow) (yellow)")
+disj = co_ship.disj(co_arrow)
+heurs(co_music, disj)
+x = sorted_eigvals(co_music - disj)
+plt.plot(x, color="red")
+plt.hlines(0, 0, len(x), linestyles="--")
 # %%
