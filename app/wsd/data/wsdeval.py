@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Iterable
 
 from lxml import etree
-from tqdm import tqdm
 
 
 @dataclass
