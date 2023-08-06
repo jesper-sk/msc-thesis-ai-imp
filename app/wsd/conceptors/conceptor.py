@@ -185,7 +185,7 @@ def loewner(a: Conceptor, b: Conceptor, tol: float = 1e-3) -> int:
     b : Conceptor
         The second conceptor
     tol : float, optional
-        The floating-point comparison tolerance, by default 1e-8
+        The floating-point comparison tolerance, by default 1e-3
 
     Returns
     -------

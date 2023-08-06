@@ -24,13 +24,23 @@ import umap
 word = "bow"
 split = "train"
 
-embeddings = np.load(f"../out/vectorised/{word}.{split}.npy")
-entries = transpose_entries(
+embeddings_tr = np.load(f"../out/vectorised/bert-base-uncased/{word}.train.npy")
+entries_tr = transpose_entries(
     cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
         word
-    ].get_data_split(split)
+    ].get_data_split("train")
 )
-umap_emb = umap.UMAP().fit_transform(embeddings)
+
+embeddings_te = np.load(f"../out/vectorised/bert-base-uncased/{word}.test.npy")
+entries_te = transpose_entries(
+    cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+        word
+    ].get_data_split("test")
+)
+entries = cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+    word
+].vertical()
+umap_emb = umap.UMAP().fit_transform(np.concatenate((embeddings_tr, embeddings_te)))
 
 # %%
 

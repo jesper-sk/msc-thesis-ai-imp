@@ -16,6 +16,11 @@
     1. The `--dev` flag makes sure all development dependencies are also installed. If you are just planning to run the project and not develop from it, you can omit it. 
     1. You can also install all dependencies through `pip` directly, using the provided `requirements.txt` file. It is recommended to use a virtual environment nonetheless.
 
+3. Ensure the necessary project resources are installed.
+    1. You can download WordNet 3.0 [here](http://wordnetcode.princeton.edu/3.0/WordNet-3.0.tar.gz). The default location to extract is `data/WordNet-3.0`.
+    1. The WSD Evaluation framework data can be downloaded from [here](http://lcl.uniroma1.it/wsdeval/). The default location to extrarct is `data/WSD_Evaluation_Framework`.
+    1. The XL-WSD data can be downloaded from [here](https://sapienzanlp.github.io/xl-wsd/) ("Data"). The default location to extract is `data/xl-wsd`. 
+
 3. Run the CLI of the project. This can be done through pipenv.
     ```sh
     pipenv run python app
