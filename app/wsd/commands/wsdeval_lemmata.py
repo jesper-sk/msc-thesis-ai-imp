@@ -50,7 +50,7 @@ class ExtractLemmata(Command):
         gold = path / f"{args.dataset}.gold.key.txt"
         xml = path / f"{args.dataset}.data.xml"
 
-        _, sentences = wsdeval.load(xml, gold)
+        _, sentences = wsdeval.load_from_paths(xml, gold)
 
         lemmata: dict[str, set[str]] = defaultdict(set)
         for sentence in sentences:
