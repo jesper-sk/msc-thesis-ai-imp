@@ -1,12 +1,7 @@
 import json
 from argparse import ArgumentParser, Namespace
-from dataclasses import asdict
 from pathlib import Path
 
-from tqdm import tqdm
-
-from ..data import coarsewsd20 as cwsd
-from ..util.path import validate_and_create_dir, validate_existing_dir
 from .command import Command
 
 
@@ -34,6 +29,13 @@ class PrepEwiser(Command):
 
     @staticmethod
     def run(args: Namespace) -> None:
+        from dataclasses import asdict
+
+        from tqdm import tqdm
+
+        from ..data import coarsewsd20 as cwsd
+        from ..util.path import validate_and_create_dir, validate_existing_dir
+
         data_path = validate_existing_dir(args.path or cwsd.DATA_ROOT)
         out_path = validate_and_create_dir(args.out)
 

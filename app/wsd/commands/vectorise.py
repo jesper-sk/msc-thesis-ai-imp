@@ -1,7 +1,6 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from ..vectorise.bert import BertVectoriser
 from .command import Command
 
 
