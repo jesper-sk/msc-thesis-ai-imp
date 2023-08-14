@@ -7,7 +7,7 @@ from torch import Tensor
 from transformers import BertModel, BertTokenizerFast
 from transformers.utils.generic import ModelOutput, PaddingStrategy, TensorType
 
-from ..data.entry import Entry, transpose_entries
+from ..data.tokens import TokenBatch, TokenInputConvertible
 from . import Vectoriser
 
 # Type aliases
@@ -319,7 +319,43 @@ class BertVectoriser(Vectoriser):
         if self.device == "cuda":
             torch.cuda.empty_cache()
 
-    def __call__(self, batch: Iterable[Entry]) -> Tensor:
+    # def __call__(self, batch: Iterable[Entry]) -> Tensor:
+    #     """Call the vectoriser on the given batch of sentences. This will vectorise the
+    #     sentences and return the output of the model for each sentence. Note that you must
+    #     call `load_prepare_models()` before calling this method, if `preload` was set to
+    #     False in the constructor.
+
+    #     Parameters
+    #     ----------
+    #     `batch : Iterable[Entry]`
+    #         The batch of sentences to vectorise.
+
+    #     Returns
+    #     -------
+    #     `Iterable[Tensor]`
+    #         The output of the model for each entry in the batch.
+    #     """
+    #     entries = VerticalEntries.make(batch)
+    #     encoded = self.encode_tokens(list(entries.tokens))
+
+    #     target_token_indices = self.get_target_subword_token_ranges(
+    #         encoded.word_ids, entries.target_word_ids
+    #     )
+    #     model_output = self.model_pass(encoded)
+    #     merged_embeddings = self.merge_layers(
+    #         [
+    #             self.get_layer(model_output, layer_id)
+    #             for layer_id in self.layers_of_interest
+    #         ]
+    #     )
+    #     target_embeddings = self.extract_target_embeddings(
+    #         merged_embeddings, target_token_indices
+    #     )
+
+    #     self._iter_cleanup()
+    #     return target_embeddings.detach()  # detaching from autograd graph, pevents OOM
+
+    def __call__(self, batch: TokenBatch):
         """Call the vectoriser on the given batch of sentences. This will vectorise the
         sentences and return the output of the model for each sentence. Note that you must
         call `load_prepare_models()` before calling this method, if `preload` was set to
@@ -335,12 +371,12 @@ class BertVectoriser(Vectoriser):
         `Iterable[Tensor]`
             The output of the model for each entry in the batch.
         """
-        entries = transpose_entries(batch)
-        encoded = self.encode_tokens(list(entries.tokens))
+        encoded = self.encode_tokens(list(batch.tokens))
 
         target_token_indices = self.get_target_subword_token_ranges(
-            encoded.word_ids, entries.target_word_ids
+            encoded.word_ids, batch.target_token_id
         )
+
         model_output = self.model_pass(encoded)
         merged_embeddings = self.merge_layers(
             [
@@ -348,6 +384,7 @@ class BertVectoriser(Vectoriser):
                 for layer_id in self.layers_of_interest
             ]
         )
+
         target_embeddings = self.extract_target_embeddings(
             merged_embeddings, target_token_indices
         )

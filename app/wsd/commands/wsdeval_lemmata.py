@@ -1,9 +1,7 @@
 from argparse import ArgumentParser, Namespace
-from collections import defaultdict
 from pathlib import Path
 
-from ..data import wsdeval
-from ..util.path import validate_existing_dir
+from ..util.path import validate_and_create_dir
 from .command import Command
 
 
@@ -15,11 +13,14 @@ class ExtractLemmata(Command):
     @staticmethod
     def add_arguments(parser: ArgumentParser) -> None:
         parser.add_argument(
-            "-f",
-            "--framework",
+            "-p", "--path", type=Path, help="the root path of the dataset", default=None
+        )
+        parser.add_argument(
+            "-v",
+            "--variant",
             type=str,
-            help="The framework to use: [wsdeval, xl-wsd, {path}]",
-            default="wsdeval",
+            help="The dataset variant to vectorise for wsdeval, ALL",
+            default=None,
         )
         parser.add_argument(
             "-o",
@@ -28,38 +29,37 @@ class ExtractLemmata(Command):
             help="The location for the output file",
             required=True,
         )
-        parser.add_argument("-d", "--dataset", type=str, default=None)
 
     @staticmethod
     def run(args: Namespace) -> None:
-        if args.framework == "wsdeval":
-            path = Path("data/WSD_Evaluation_Framework/Evaluation_Datasets")
-            dataset = args.dataset or "ALL"
-        elif args.framework == "xl-wsd":
-            path = Path("data/xl-wsd/evaluation_datasets")
-            dataset = args.dataset or "test-en"
-        else:
-            path = Path(args.framework)
-            dataset = args.dataset
-            if not dataset:
-                raise Exception("No dataset given")
+        from collections import defaultdict
 
-        path /= args.dataset
-        validate_existing_dir(path)
+        from tqdm import tqdm
 
-        gold = path / f"{args.dataset}.gold.key.txt"
-        xml = path / f"{args.dataset}.data.xml"
+        from ..data import wsdeval as wsde
 
-        _, sentences = wsdeval.load(xml, gold)
+        variant = (
+            eval(f"wsde.Variant.{args.variant.upper()}")
+            if args.variant
+            else wsde.Variant.ALL
+        )
+
+        _, sentences = wsde.load(variant, args.path or wsde.DATA_ROOT)
 
         lemmata: dict[str, set[str]] = defaultdict(set)
-        for sentence in sentences:
+        lemmata_count: dict[str, int] = defaultdict(int)
+        for sentence in tqdm(sentences):
             for inst_idx, inst_pos in enumerate(sentence.instance_positions):
                 lemma = sentence.lemmas[inst_pos]
                 labels = sentence.instance_labels[inst_idx]
 
+                lemmata_count[lemma] += 1
                 lemmata[lemma] |= set(labels)
 
-        with open(args.out, "w", encoding="utf-8") as file:
+        out = validate_and_create_dir(args.out)
+
+        with open(
+            out / f"wsdeval_{args.variant or 'all'}_lemmata.csv", "w", encoding="utf-8"
+        ) as file:
             for lemma, labels in lemmata.items():
-                file.write(f"{lemma},{','.join(labels)}\n")
+                file.write(f"{lemma},{lemmata_count[lemma]},{','.join(labels)}\n")

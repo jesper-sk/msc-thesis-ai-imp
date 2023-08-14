@@ -1,0 +1,14 @@
+# %%
+import datasets as ds
+
+bc = ds.load_dataset("bookcorpus")
+bct = bc["train"]
+# %%
+from tqdm import tqdm
+
+
+def count(word):
+    return len([entry for entry in tqdm(bct) if word in entry["text"]])
+
+
+# %%

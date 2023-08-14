@@ -2,11 +2,43 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Iterable
 
 from lxml import etree
-from tqdm import tqdm
+
+from .tokens import TokenInput, TokenInputConvertible
+
+DATA_ROOT = Path("data/WSD_Evaluation_Framework")
+
+
+class Variant(Enum):
+    ALL = "Evaluation_Datasets/ALL/ALL.{dataset}"
+    SEMEVAL2007 = "Evaluation_Datasets/semeval2007/semeval2007.{dataset}"
+    SEMEVAL2013 = "Evaluation_Datasets/semeval2013/semeval2013.{dataset}"
+    SEMEVAL2015 = "Evaluation_Datasets/semeval2015/semeval2015.{dataset}"
+    SENSEVAL2 = "Evaluation_Datasets/senseval2/senseval2.{dataset}"
+    SENESVAL3 = "Evaluation_Datasets/senseval3/senseval3.{dataset}"
+    SEMCOR = "Training_Corpora/SemCor/semcor.{dataset}"
+    SEMCOR_OMSTI = "Training_Corpora/SemCor+OMSTI/semcor+omsti.{dataset}"
+
+    def paths(self, root: Path) -> tuple[Path, Path]:
+        return (
+            root / self.value.format(dataset="data.xml"),
+            root / self.value.format(dataset="gold.key.txt"),
+        )
+
+
+@dataclass
+class Instance(TokenInputConvertible):
+    identifier: str
+    words: list[str]
+    target_position: int
+    target_labels: list[str]
+
+    def to_tokens(self):
+        return TokenInput(self.words, self.target_position)
 
 
 @dataclass
@@ -34,6 +66,17 @@ class Sentence:
             self.instance_labels,
         )
 
+    def instances(self):
+        return [
+            Instance(identifier, self.words, position, label)
+            for identifier, position, label in zip(
+                self.instance_identifiers, self.instance_positions, self.instance_labels
+            )
+        ]
+
+
+Dataset = tuple[dict[str, list[str]], list[Sentence]]
+
 
 @dataclass
 class Sentences:
@@ -58,7 +101,7 @@ def load_gold(path: Path) -> dict[str, list[str]]:
         }
 
 
-def load_sentences(xml_path: Path, gold_map: dict[str, list[str]]):
+def load_sentences(xml_path: Path, gold_map: dict[str, list[str]]) -> list[Sentence]:
     sentences = list()
     for _, sentence in etree.iterparse(xml_path, tag="sentence"):
         identifier = sentence.attrib["id"]
@@ -86,7 +129,11 @@ def load_sentences(xml_path: Path, gold_map: dict[str, list[str]]):
     return sentences
 
 
-def load(xml_path: Path, gold_path: Path):
+def load(variant: Variant, root=DATA_ROOT) -> Dataset:
+    return load_from_paths(*variant.paths(root))
+
+
+def load_from_paths(xml_path: Path, gold_path: Path) -> Dataset:
     gold_map = load_gold(gold_path)
     sentences = load_sentences(xml_path, gold_map)
 
