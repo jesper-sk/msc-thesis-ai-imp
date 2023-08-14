@@ -284,6 +284,32 @@ class BertVectoriser(Vectoriser):
             for entry_id in range(len(target_word_ids))
         ]
 
+    def get_new_target_subword_token_ranges(
+        self,
+        get_word_ids: Callable[[int], list[int | None]],
+        target_word_ids: Sequence[Sequence[int]],
+    ) -> list[list[tuple[int, int]]]:
+        def get_target_subword_token_ranges(
+            word_ids: list[int | None], target_word_ids: Sequence[int]
+        ):
+            ret = []
+            for target_word_id in target_word_ids:
+                all_indices = [
+                    token_index
+                    for token_index, word_id in enumerate(word_ids)
+                    if word_id == target_word_id
+                ]
+                ret.append((all_indices[0], all_indices[-1] + 1))
+            return ret
+
+        return [  # list[(start_idx, end_idx)]
+            get_target_subword_token_ranges(
+                word_ids=get_word_ids(entry_id),
+                target_word_ids=target_ids_of_sentence,
+            )
+            for entry_id, target_ids_of_sentence in enumerate(target_word_ids)
+        ]
+
     def extract_target_embeddings(
         self, merged_embeddings: Tensor, target_token_ranges: list[tuple[int, int]]
     ) -> Tensor:
