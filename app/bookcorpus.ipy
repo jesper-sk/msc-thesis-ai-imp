@@ -1,14 +1,19 @@
 # %%
 import datasets as ds
 
-bc = ds.load_dataset("bookcorpus")
-bct = bc["train"]
+bc = ds.load_dataset("bookcorpus", split="train")
+
+with open("../data/selected-words.csv", "r") as file:
+    next(file)
+    words = [
+        " " + word + " "
+        for row in file.read().split("\n")
+        for word in row.split(",")
+        if word
+    ]
 # %%
-from tqdm import tqdm
 
-
-def count(word):
-    return len([entry for entry in tqdm(bct) if word in entry["text"]])
-
+filtered = bc.filter(lambda x: any(word in x["text"] for word in words))
 
 # %%
+filtered.save_to_disk("../data/bookcorpus-filtered")
