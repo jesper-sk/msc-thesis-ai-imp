@@ -1,0 +1,27 @@
+# %%
+from collections import defaultdict
+from pathlib import Path as P
+
+import wsd.data.wsdeval as e
+
+root = P("../data/WSD_Evaluation_Framework")
+
+train = e.load(e.Variant.SEMCOR, root)
+test = e.load(e.Variant.ALL, root)
+
+tr_vocab = list(set(value for values in train[0].values() for value in values))
+te_vocab = list(set(value for values in test[0].values() for value in values))
+
+_, sentences = train
+lemmata: dict[str, set[str]] = defaultdict(set)
+for sentence in sentences:
+    for inst_idx, inst_pos in enumerate(sentence.instance_positions):
+        lemma = sentence.lemmas[inst_pos]
+        labels = sentence.instance_labels[inst_idx]
+
+        lemmata[lemma] |= set(labels)
+
+# %%
+with open("../out/semcor_lemmata.csv", "w", encoding="utf-8") as file:
+    for lemma, labels in lemmata.items():
+        file.write(f"{lemma},{','.join(labels)}\n")

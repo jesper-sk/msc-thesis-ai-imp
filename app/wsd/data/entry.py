@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from typing import Iterable
 
+from .tokens import TokenInput, TokenInputConvertible
+
 
 @dataclass
-class Entry:
+class Entry(TokenInputConvertible):
     """A single data entry."""
 
     tokens: list[str]
@@ -19,6 +21,9 @@ class Entry:
             self.target_class_id,
         )
 
+    def to_tokens(self) -> TokenInput:
+        return TokenInput(self.tokens, self.target_word_id)
+
 
 @dataclass
 class VerticalEntries:
@@ -29,10 +34,25 @@ class VerticalEntries:
     target_classes: tuple[str]
     target_class_ids: tuple[int]
 
+    @classmethod
+    def make(cls, entries: Iterable[Entry]):
+        """Transpose a collection of entries. Instead of a list of entries, this will return a
+        single data structure with lists of the corresponding fields.
 
-def transpose_entries(
-    entries: Iterable[Entry],
-) -> VerticalEntries:
+        Parameters
+        ----------
+        entries : Iterable[Entry]
+            The entries to transpose.
+
+        Returns
+        -------
+        VerticalEntries
+            The transposed entries.
+        """
+        return cls(*zip(*map(lambda x: x.unpack(), entries)))  # type: ignore
+
+
+def transpose_entries(entries: Iterable[Entry]):
     """Transpose a collection of entries. Instead of a list of entries, this will return a
     single data structure with lists of the corresponding fields.
 
