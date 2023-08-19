@@ -1,5 +1,5 @@
-[submodule "data/CoarseWSD-20"]
-	path = data/CoarseWSD-20
+[submodule "data/coarsewsd/CoarseWSD-20"]
+	path = data/coarsewsd/CoarseWSD-20
 	url = https://github.com/jesper-sk/coarsewsd-20
 [submodule "repos/ewiser"]
 	path = repos/ewiser
