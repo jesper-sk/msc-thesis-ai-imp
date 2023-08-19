@@ -12,7 +12,7 @@ from wsd.util.angle import rad_to_deg
 
 warnings.filterwarnings("ignore")
 
-path = Path("../out/split/bert-base-uncased")
+path = Path("../data/coarsewsd/split/bert-base-uncased")
 senses = list(path.glob("*.npy"))
 
 

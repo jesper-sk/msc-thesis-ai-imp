@@ -8,7 +8,7 @@ import torch.nn as nn
 
 import wsd.data.wsdeval as wsde
 
-path = Path("../out/vectorised/wsdeval_bert-base-uncased_semcor")
+path = Path("../data/vectorised/wsdeval_bert-base-uncased_semcor")
 
 with open(path / "labels.txt", "r") as file:
     identifiers = file.read().split("\n")
@@ -16,7 +16,7 @@ with open(path / "labels.txt", "r") as file:
 embeddings = np.load(path / "embeddings.npy")
 
 goldmap, sentences = wsde.load(
-    wsde.Variant.SEMCOR, Path("../data/WSD_Evaluation_Framework")
+    wsde.Variant.SEMCOR, Path("../data/wsdeval/WSD_Evaluation_Framework")
 )
 
 with open(Path("../data/selected-words.csv"), "r") as file:

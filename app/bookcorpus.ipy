@@ -8,7 +8,7 @@ filtered bookcorpus. The conclusion is that 74% of the selected words have at le
 # %%
 import datasets
 
-ds = datasets.load_from_disk("../data/bookcorpus-filtered")
+ds = datasets.load_from_disk("../data/bookcorpus/filtered")
 
 # %%
 

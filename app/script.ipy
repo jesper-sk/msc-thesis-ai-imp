@@ -9,7 +9,7 @@ from wsd.vectorise.bert import BertVectoriser
 
 # %%
 
-data = cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+data = cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/coarsewsd/CoarseWSD-20")[
     "seal"
 ].train
 entries = transpose_entries(data)
@@ -24,22 +24,26 @@ import umap
 word = "bow"
 split = "train"
 
-embeddings_tr = np.load(f"../out/vectorised/bert-base-uncased/{word}.train.npy")
+embeddings_tr = np.load(
+    f"../data/vectorised/coarsewsd_bert-base-uncased_regular/{word}.train.npy"
+)
 entries_tr = transpose_entries(
-    cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+    cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/coarsewsd/CoarseWSD-20")[
         word
     ].get_data_split("train")
 )
 
-embeddings_te = np.load(f"../out/vectorised/bert-base-uncased/{word}.test.npy")
+embeddings_te = np.load(
+    f"../data/vectorised/coarsewsd_bert-base-uncased_regular/{word}.test.npy"
+)
 entries_te = transpose_entries(
-    cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+    cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/coarsewsd/CoarseWSD-20")[
         word
     ].get_data_split("test")
 )
-entries = cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
-    word
-].vertical()
+entries = cwsd.load_dataset(
+    cwsd.Variant.REGULAR, root="../data/coarsewsd/CoarseWSD-20"
+)[word].vertical()
 umap_emb = umap.UMAP().fit_transform(np.concatenate((embeddings_tr, embeddings_te)))
 
 # %%

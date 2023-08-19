@@ -4,7 +4,7 @@ from pathlib import Path as P
 
 import wsd.data.wsdeval as e
 
-root = P("../data/WSD_Evaluation_Framework")
+root = P("../data/wsdeval/WSD_Evaluation_Framework")
 
 train = e.load(e.Variant.SEMCOR, root)
 test = e.load(e.Variant.ALL, root)

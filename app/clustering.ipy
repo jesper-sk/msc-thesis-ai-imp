@@ -13,14 +13,14 @@ from wsd.data import coarsewsd20 as cwsd
 warnings.filterwarnings("ignore")
 # %% Data
 
-data = cwsd.load_dataset(cwsd.Variant.REGULAR, "../data/CoarseWSD-20")
+data = cwsd.load_dataset(cwsd.Variant.REGULAR, "../data/coarsewsd/CoarseWSD-20")
 
 
 # %% K-means function definitions
 def load(
     word: cwsd.Word,
     split=None,
-    path: Path = Path("../out/vectorised/sensebert-base-uncased"),
+    path: Path = Path("../data/vectorised/coarsewsd_bert-base-uncased_regular"),
 ):
     if split:
         return np.load(path / f"{word}.{split}.npy")

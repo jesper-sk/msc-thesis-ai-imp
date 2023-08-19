@@ -9,9 +9,11 @@ from wsd.data.entry import transpose_entries
 word = "bow"
 split = "train"
 
-embeddings = np.load(f"../out/vectorised/{word}.{split}.npy")
+embeddings = np.load(
+    f"../out/vectorised/coarsewsd_bert-base-uncased_regular/{word}.{split}.npy"
+)
 entries = transpose_entries(
-    cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/CoarseWSD-20")[
+    cwsd.load_dataset(cwsd.Variant.REGULAR, root="../data/coarsewsd/CoarseWSD-20")[
         word
     ].get_data_split(split)
 )
