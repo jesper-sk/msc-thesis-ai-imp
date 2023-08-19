@@ -10,7 +10,7 @@ from lxml import etree
 
 from .tokens import TokenInput, TokenInputConvertible
 
-DATA_ROOT = Path("data/WSD_Evaluation_Framework")
+DATA_ROOT = Path("data/wsdeval/WSD_Evaluation_Framework")
 
 
 class Variant(Enum):

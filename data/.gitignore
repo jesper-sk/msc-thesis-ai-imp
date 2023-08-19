@@ -1,5 +1,13 @@
-WSD_Evaluation_Framework
+bookcorpus/annotated
+bookcorpus/filtered
+bookcorpus/prepared
+
+coarsewsd/annotated
+coarsewsd/split
+
+vectorised
+
+wsdeval/WSD_Evaluation_Framework
+
 ewiser.semcor+wngt.pt
-xl-wsd
-WordNet-3.0
-bookcorpus-filtered
+out.zip

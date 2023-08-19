@@ -1,7 +1,16 @@
-# %%
-import datasets as ds
+"""
+This script does some preliminary exploration of the amount of occurrences present in the
+filtered bookcorpus. The conclusion is that 74% of the selected words have at least 786 
+(d_BERT) occurrences, 92% have at least 100 occurrences only 3 words have less than 
+10 occurrences.
+"""
 
-bc = ds.load_dataset("bookcorpus", split="train")
+# %%
+import datasets
+
+ds = datasets.load_from_disk("../data/bookcorpus-filtered")
+
+# %%
 
 with open("../data/selected-words.csv", "r") as file:
     next(file)
@@ -11,9 +20,38 @@ with open("../data/selected-words.csv", "r") as file:
         for word in row.split(",")
         if word
     ]
+import collections as c
+
+wordcount = c.defaultdict(int)
+
+from tqdm import tqdm
+
+for line in tqdm(ds):
+    for word in words:
+        if word in line["text"]:
+            wordcount[word] += 1
+# %%
+import matplotlib.pyplot as plt
+
+names = list(wordcount.keys())
+values = list(wordcount.values())
+ticks = list(range(len(names)))
+
 # %%
 
-filtered = bc.filter(lambda x: any(word in x["text"] for word in words))
+plt.figure(figsize=(30, 6))
+plt.bar(ticks, values)
+plt.hlines([768, 100, 10], 0, len(ticks), ["red", "red", "red"], "dashed")
+plt.xticks(range(len(names)), labels=names, rotation=-90)
+plt.yscale("log")
+plt.show()
 
 # %%
-filtered.save_to_disk("../data/bookcorpus-filtered")
+
+print(
+    f"{100*len([val for val in values if val>=768])/len(values):.2f}%"
+)  # 74% of words have at least 768 occurrences
+print(
+    f"{100*len([val for val in values if val>=100])/len(values):.2f}%"
+)  # 92% of words have at least 100 occurrences
+# %%

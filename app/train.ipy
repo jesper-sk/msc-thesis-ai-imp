@@ -1,0 +1,115 @@
+# %%
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.nn as nn
+
+import wsd.data.wsdeval as wsde
+
+path = Path("../out/vectorised/wsdeval_bert-base-uncased_semcor")
+
+with open(path / "labels.txt", "r") as file:
+    identifiers = file.read().split("\n")
+
+embeddings = np.load(path / "embeddings.npy")
+
+goldmap, sentences = wsde.load(
+    wsde.Variant.SEMCOR, Path("../data/WSD_Evaluation_Framework")
+)
+
+with open(Path("../data/selected-words.csv"), "r") as file:
+    next(file)
+    lemmata = [line.split(",")[0] for line in file.read().split("\n")]
+    lemmata = [lemma for lemma in lemmata if lemma]
+
+# %%
+from collections import defaultdict
+
+from tqdm import tqdm
+
+lemma_count = defaultdict(int)
+argwhere_selected = []
+selected_sentences = []
+all_selected_instance_identifiers = []
+for idx, sentence in tqdm(enumerate(sentences), total=len(sentences)):
+    positions = sentence.instance_positions
+    instance_lemmata = [sentence.lemmas[pos] for pos in positions]
+    instance_poss = [sentence.poss[pos] for pos in positions]
+    instance_selected = [
+        lemma in lemmata and pos == "NOUN"
+        for lemma, pos in zip(instance_lemmata, instance_poss)
+    ]
+
+    if not any(instance_selected):
+        continue
+
+    selected_instance_positions = [
+        position
+        for position, selected in zip(sentence.instance_positions, instance_selected)
+        if selected
+    ]
+    selected_instance_identifiers = [
+        identifier
+        for identifier, selected in zip(
+            sentence.instance_identifiers, instance_selected
+        )
+        if selected
+    ]
+    selected_instance_labels = [
+        label
+        for label, selected in zip(sentence.instance_labels, instance_selected)
+        if selected
+    ]
+
+    new = wsde.Sentence(
+        sentence.identifier,
+        sentence.lemmas,
+        sentence.poss,
+        sentence.words,
+        selected_instance_positions,
+        selected_instance_identifiers,
+        selected_instance_labels,
+    )
+
+    for idx, lemma in enumerate(instance_lemmata):
+        if instance_selected[idx]:
+            lemma_count[lemma] += 1
+
+    selected_sentences.append(new)
+    all_selected_instance_identifiers += selected_instance_identifiers
+    argwhere_selected.append(idx)
+
+# %%
+names = list(lemma_count.keys())
+values = list(lemma_count.values())
+ticks = list(range(len(names)))
+
+plt.figure(figsize=(30, 6))
+plt.bar(ticks, values)
+plt.xticks(range(len(names)), labels=names, rotation=-90)
+plt.show()
+
+
+# %%
+
+from wsd.vectorise.bert import BertVectoriser
+from wsd.vectorise.vectoriser import vectorise_wsdeval
+
+vectoriser = BertVectoriser("bert-base-uncased", device="cuda")
+
+instances, embeddings = vectorise_wsdeval(vectoriser, selected_sentences, 24)
+# %%
+
+labels = [goldmap[instance.identifier] for instance in instances]
+vocabulary_size = len(labels)
+# %%
+
+model = nn.Sequential(
+    nn.BatchNorm1d(768),
+    nn.Linear(768, 768),
+    nn.SiLU(),  # swish
+    nn.Linear(768, vocabulary_size),
+    nn.Softmax(),
+)

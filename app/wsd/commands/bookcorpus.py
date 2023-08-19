@@ -1,16 +1,17 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from ..util.path import validate_existing_dir
+from ..util.path import validate_and_create_dir
 from .command import Command
 
 WORDSFILE_DEFAULT = Path("data/selected-words.csv")
+OUT_DEFAULT = Path("data/bookcorpus-filtered")
 
 
-class MyCommand(Command):
+class FilterBookCorpus(Command):
     @staticmethod
     def name() -> str:
-        return "bookcorpus"
+        return "filter-bookcorpus"
 
     @staticmethod
     def add_arguments(parser: ArgumentParser) -> None:
@@ -56,7 +57,7 @@ class MyCommand(Command):
             "num_proc": args.nproc,
         }
 
-        out = validate_existing_dir(args.out)
+        out = validate_and_create_dir(args.out)
 
         (
             datasets.load_dataset("bookcorpus", **kwargs)

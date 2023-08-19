@@ -32,7 +32,7 @@ Word: TypeAlias = Literal[
 Split: TypeAlias = Literal["train", "test"]
 
 WORDS: tuple = typing.get_args(Word)
-DATA_ROOT: Path = Path("data/CoarseWSD-20")
+DATA_ROOT: Path = Path("data/coarsewsd/CoarseWSD-20")
 WORDNET_MAPPINGS_PATH = DATA_ROOT / "wn_mappings.tsv"
 OUT_OF_DOMAIN_DATA_PATH = DATA_ROOT / "CoarseWSD-20.outofdomain.tsv"
 

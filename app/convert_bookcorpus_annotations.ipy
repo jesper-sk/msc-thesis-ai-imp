@@ -1,0 +1,21 @@
+# %%
+# {
+#     "text": ,
+#     "lemma": ,
+#     "pos": ,
+#     "offset": ,
+# } for word in sentence
+#   for sentence in sentences
+
+# Into:
+
+# [synset]_sentences.txt
+# [target_word_position], First full sentence tokenized etc
+# ...
+# %%
+
+import json
+from pathlib import Path
+
+annotations_path = Path("../out/bookcorpus-filtered-annotated")
+output_path = Path("./out/bookcorpus/")
