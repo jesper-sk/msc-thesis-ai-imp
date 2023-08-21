@@ -22,10 +22,12 @@ See below:
 
 import json
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 from nltk.corpus import wordnet as wn
+from tqdm import tqdm
 
 annotations_path = Path("../data/bookcorpus/annotated")
 output_path = Path("../data/bookcorpus/prepared")
@@ -45,21 +47,23 @@ def parse_wnoffset(offset: str):
     return ret[-1], int(ret[:-1])
 
 
+@dataclass
+class SentMetadata:
+    text: str
+    origin: str
+    position: str
+    synset: str
+
+
 # %%
-wordnet_map: dict[str, object] = {}
-sentence_buffer = defaultdict(list)
-position_buffer = defaultdict(list)
+"""Load json files from disk and interpret them into datatype that can be saved. Filter 
+out all duplicates.
+"""
 
-print("purging directory...")
-output_path.mkdir(exist_ok=True)
-for text_file in output_path.glob("*.sentences.txt"):
-    text_file.unlink()
+buffer: dict[tuple[str, int], SentMetadata] = dict()
+wordnet_map: dict[str, object] = dict()
 
-for text_file in output_path.glob("*.target_ids.txt"):
-    text_file.unlink()
-
-for idx, path in enumerate(annotations_path.glob("*.json")):
-    print(f"{idx:03d}:", path.stem)
+for idx, path in tqdm(enumerate(annotations_path.glob("*.json")), total=420):
     with open(path, "r") as file:
         data = json.load(file)
 
@@ -87,25 +91,53 @@ for idx, path in enumerate(annotations_path.glob("*.json")):
                 synset = wn.synset_from_pos_and_offset(*parse_wnoffset(offset))
                 wordnet_map[offset] = synset
 
-            synset_name = str(synset).replace("Synset('", "").replace("')", "")
-            sname = f"{synset_name}.sentences.txt"
-            pname = f"{synset_name}.target_ids.txt"
+            sentence_text = " ".join([word["text"] for word in sentence])
+            key = (sentence_text, target_position)
 
-            sentence_buffer[sname].append(" ".join([word["text"] for word in sentence]))
-            position_buffer[pname].append(str(target_position))
+            if key not in buffer:
+                synset_name = str(synset).replace("Synset('", "").replace("')", "")
 
-    if (idx + 1) % 5 == 0:
-        print("saving")
-        for filename, sentences in sentence_buffer.items():
-            with open(output_path / filename, "a") as file:
-                file.write("\n".join(sentences))
+                buffer[key] = SentMetadata(
+                    text=sentence_text,
+                    origin=path.stem,
+                    position=str(target_position),
+                    synset=synset_name,
+                )
 
-        for filename, positions in position_buffer.items():
-            with open(output_path / filename, "a") as file:
-                file.write("\n".join(positions))
+# %%
+"""Save to disk.
+"""
 
-        sentence_buffer = defaultdict(list)
-        position_buffer = defaultdict(list)
+
+print("Purging directory...")
+output_path.mkdir(exist_ok=True)
+for text_file in output_path.glob("*.sentences.txt"):
+    text_file.unlink()
+
+for text_file in output_path.glob("*.target_ids.txt"):
+    text_file.unlink()
+
+for text_file in output_path.glob("*.origin.txt"):
+    text_file.unlink()
+
+
+converted = defaultdict(list)
+for meta in tqdm(buffer.values(), desc="Converting data"):
+    converted[meta.synset].append(meta)
+
+for synset, sentences in tqdm(converted.items(), desc="Saving synsets"):
+    sname = f"{synset}.sentences.txt"
+    pname = f"{synset}.target_ids.txt"
+    oname = f"{synset}.origin.txt"
+
+    with open(output_path / sname, "w") as file:
+        file.write("\n".join(sentence.text for sentence in sentences))
+
+    with open(output_path / pname, "w") as file:
+        file.write("\n".join(sentence.position for sentence in sentences))
+
+    with open(output_path / oname, "w") as file:
+        file.write("\n".join(sentence.origin for sentence in sentences))
 
 
 # %%
