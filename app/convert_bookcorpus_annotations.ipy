@@ -1,4 +1,10 @@
 # %%
+"""
+Convert the bookcorpus annotations (from ../repos/ewiser/bin/annotate_bookcorpus.py) into
+a file format suitable for vectorisation (and also filter so that only nouns are left).
+See below:
+"""
+
 # {
 #     "text": ,
 #     "lemma": ,
@@ -15,10 +21,11 @@
 # %%
 
 import json
+from collections import defaultdict
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 from nltk.corpus import wordnet as wn
-from tqdm import tqdm
 
 annotations_path = Path("../data/bookcorpus/annotated")
 output_path = Path("../data/bookcorpus/prepared")
@@ -39,13 +46,24 @@ def parse_wnoffset(offset: str):
 
 
 # %%
-wordnet_map = {}
+wordnet_map: dict[str, object] = {}
+sentence_buffer = defaultdict(list)
+position_buffer = defaultdict(list)
 
-for path in annotations_path.glob("*.json"):
+print("purging directory...")
+output_path.mkdir(exist_ok=True)
+for text_file in output_path.glob("*.sentences.txt"):
+    text_file.unlink()
+
+for text_file in output_path.glob("*.target_ids.txt"):
+    text_file.unlink()
+
+for idx, path in enumerate(annotations_path.glob("*.json")):
+    print(f"{idx:03d}:", path.stem)
     with open(path, "r") as file:
         data = json.load(file)
 
-    for sentence in tqdm(data):
+    for sentence in data:
         target_word_positions = [
             index for index, word in enumerate(sentence) if word["lemma"] in lemmas
         ]
@@ -69,17 +87,58 @@ for path in annotations_path.glob("*.json"):
                 synset = wn.synset_from_pos_and_offset(*parse_wnoffset(offset))
                 wordnet_map[offset] = synset
 
-            spath = output_path / f"{synset}.sentences.txt"
-            ipath = output_path / f"{synset}.target_ids.txt"
+            synset_name = str(synset).replace("Synset('", "").replace("')", "")
+            sname = f"{synset_name}.sentences.txt"
+            pname = f"{synset_name}.target_ids.txt"
 
-            with open(spath, "a") as file:
-                file.write(" ".join([word["text"] for word in sentence]))
-                file.write("\n")
+            sentence_buffer[sname].append(" ".join([word["text"] for word in sentence]))
+            position_buffer[pname].append(str(target_position))
 
-            with open(ipath, "a") as file:
-                file.write(f"{target_position}\n")
+    if (idx + 1) % 5 == 0:
+        print("saving")
+        for filename, sentences in sentence_buffer.items():
+            with open(output_path / filename, "a") as file:
+                file.write("\n".join(sentences))
 
-        break
+        for filename, positions in position_buffer.items():
+            with open(output_path / filename, "a") as file:
+                file.write("\n".join(positions))
+
+        sentence_buffer = defaultdict(list)
+        position_buffer = defaultdict(list)
 
 
 # %%
+"""
+Create plots for all different lemmata and the occurrences of its different synsets
+"""
+plot_path = Path("../data/bookcorpus/plots")
+
+lemmata = {
+    sentencefile.stem.split(".")[0]
+    for sentencefile in output_path.glob("*.sentences.txt")
+}
+
+all_lemma_count: dict[str, int] = defaultdict(int)
+
+for lemma in lemmata:
+    synsets = {}
+    for synset in output_path.glob(f"{lemma}.*.sentences.txt"):
+        with open(synset, "rbU") as f:
+            name = ".".join(synset.stem.split(".")[:-1])
+            count = sum(1 for _ in f)
+            synsets[name] = count
+            all_lemma_count[name] += count
+
+    names = list(synsets.keys())
+    values = list(synsets.values())
+    ticks = list(range(len(names)))
+
+    plt.bar(ticks, values)
+    plt.xticks(range(len(names)), labels=names, rotation=-45)
+    plt.savefig(plot_path / f"{lemma}.png")
+    plt.autoscale()
+    plt.close()
+
+with open(plot_path / "all.csv", "w") as file:
+    file.write("\n".join([f"{key},{value}" for key, value in all_lemma_count.items()]))

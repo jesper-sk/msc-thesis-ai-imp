@@ -1,0 +1,21 @@
+# %%
+from pathlib import Path
+
+from tqdm import tqdm
+
+# %%
+
+dir = Path(
+    "C:\\Users\\Jesper\\Documents\\local-study\\3-_-thesis\\msc-thesis-ai-imp\\data\\bookcorpus\\annotated"
+)
+gen = dir.iterdir()
+
+# %%
+
+for file in tqdm(gen):
+    if file.suffix != ".json":
+        continue
+    cnt = int(file.stem.split("-")[0])
+    if cnt > 2798899:  # length of dataset
+        file.unlink()
+# %%
