@@ -1,23 +1,27 @@
 # %%
+"""Convert the bookcorpus annotations (from ../repos/ewiser/bin/annotate_bookcorpus.py) 
+into a file format suitable for vectorisation (and also filter so that only nouns are left).
+
+From:
+
+{
+    "text": ,
+    "lemma": ,
+    "pos": ,
+    "offset": ,
+} for word in sentence
+  for sentence in sentences
+
+(found in `data/bookcorpus/annotated`)
+
+Into:
+
+[synset]_sentences.txt
+[target_word_position], First full sentence tokenized etc
+...
+
+(found in `data/bookcorpus/prepared`)
 """
-Convert the bookcorpus annotations (from ../repos/ewiser/bin/annotate_bookcorpus.py) into
-a file format suitable for vectorisation (and also filter so that only nouns are left).
-See below:
-"""
-
-# {
-#     "text": ,
-#     "lemma": ,
-#     "pos": ,
-#     "offset": ,
-# } for word in sentence
-#   for sentence in sentences
-
-# Into:
-
-# [synset]_sentences.txt
-# [target_word_position], First full sentence tokenized etc
-# ...
 # %%
 
 import json
