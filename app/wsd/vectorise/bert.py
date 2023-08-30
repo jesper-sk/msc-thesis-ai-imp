@@ -5,6 +5,7 @@ import torch
 import transformers as trans
 from torch import Tensor
 from transformers import BertModel, BertTokenizerFast
+from transformers.tokenization_utils_base import TruncationStrategy
 from transformers.utils.generic import ModelOutput, PaddingStrategy, TensorType
 
 from ..data.tokens import TokenBatch, TokenInputConvertible
@@ -17,6 +18,8 @@ TokenizerOutput: TypeAlias = trans.tokenization_utils.BatchEncoding
 Model: TypeAlias = trans.BertModel
 SubwordMergeOperation: TypeAlias = Literal["first", "mean"]
 LayerMergeOperation: TypeAlias = Literal["sum"]
+
+MAX_SEQUENCE_LENGTH = 512
 
 
 class BertVectoriser(Vectoriser):
@@ -201,8 +204,10 @@ class BertVectoriser(Vectoriser):
             tokens,
             is_split_into_words=True,
             padding=PaddingStrategy.LONGEST,
+            truncation=TruncationStrategy.LONGEST_FIRST,
             return_tensors=TensorType.PYTORCH,
             return_attention_mask=True,  # Return attention masks to distinguish padding from input
+            max_length=MAX_SEQUENCE_LENGTH,
         )
         if self.device:
             return output.to(self.device)
@@ -274,44 +279,29 @@ class BertVectoriser(Vectoriser):
                 for token_index, word_id in enumerate(word_ids)
                 if word_id == target_word_id
             ]
+
+            if len(all_indices) == 0:
+                return None
+
             return all_indices[0], all_indices[-1] + 1
 
-        return [  # list[(start_idx, end_idx)]
-            get_target_subword_token_range(
-                word_ids=get_word_ids(entry_id),
-                target_word_id=target_word_ids[entry_id],
+        return list(
+            filter(
+                lambda x: x is not None,
+                [  # list[(start_idx, end_idx)]
+                    get_target_subword_token_range(
+                        word_ids=get_word_ids(entry_id),
+                        target_word_id=target_word_ids[entry_id],
+                    )
+                    for entry_id in range(len(target_word_ids))
+                ],
             )
-            for entry_id in range(len(target_word_ids))
-        ]
-
-    def get_new_target_subword_token_ranges(
-        self,
-        get_word_ids: Callable[[int], list[int | None]],
-        target_word_ids: Sequence[Sequence[int]],
-    ) -> list[list[tuple[int, int]]]:
-        def get_target_subword_token_ranges(
-            word_ids: list[int | None], target_word_ids: Sequence[int]
-        ):
-            ret = []
-            for target_word_id in target_word_ids:
-                all_indices = [
-                    token_index
-                    for token_index, word_id in enumerate(word_ids)
-                    if word_id == target_word_id
-                ]
-                ret.append((all_indices[0], all_indices[-1] + 1))
-            return ret
-
-        return [  # list[(start_idx, end_idx)]
-            get_target_subword_token_ranges(
-                word_ids=get_word_ids(entry_id),
-                target_word_ids=target_ids_of_sentence,
-            )
-            for entry_id, target_ids_of_sentence in enumerate(target_word_ids)
-        ]
+        )  # type: ignore
 
     def extract_target_embeddings(
-        self, merged_embeddings: Tensor, target_token_ranges: list[tuple[int, int]]
+        self,
+        merged_embeddings: Tensor,
+        target_token_ranges: list[tuple[int, int]],
     ) -> Tensor:
         """Extract embeddings for target tokens from merged layer embeddings.
 
@@ -329,7 +319,7 @@ class BertVectoriser(Vectoriser):
             The embeddings for the target tokens, for each sentence in the batch.
         """
         ret = torch.zeros(
-            merged_embeddings.shape[0::2]
+            (len(target_token_ranges), merged_embeddings.shape[2])
         )  # shape: (batch_size, embedding_dim)
 
         for sentence_index, (encoding, (start_index, end_index)) in enumerate(

@@ -1,0 +1,56 @@
+# %%
+
+from pathlib import Path
+
+import numpy as np
+
+from wsd.conceptors.conceptor import (
+    Conceptor,
+    loewner,
+    posneg_count_fraction,
+    posneg_magnitude_fraction,
+)
+
+p = Path("../data/bookcorpus/prepared")
+
+
+def conceptor(lemma: str, idx: int):
+    emb_name = f"{lemma}.n.{idx:02d}.embeddings.npy"
+    embeddings = np.load(p / emb_name)
+    return Conceptor.from_state_matrix(embeddings, aperture=0.3)
+
+
+# %%
+plant = conceptor("plant", 2)
+fruit = conceptor("fruit", 1)
+apple = conceptor("apple", 1)
+berry = conceptor("berry", 1)
+banana = conceptor("banana", 2)
+flower = conceptor("flower", 1)
+daffodil = conceptor("daffodil", 1)
+blackberry = conceptor("blackberry", 1)
+branch = conceptor("branch", 2)
+petal = conceptor("petal", 1)
+lilac = conceptor("lilac", 1)
+# %%
+combis = [
+    ("fruit", "berry"),
+    ("fruit", "banana"),
+    ("fruit", "apple"),
+    ("apple", "banana"),
+    ("berry", "blackberry"),
+    ("fruit", "blackberry"),
+    ("plant", "flower"),
+    ("flower", "daffodil"),
+    ("flower", "lilac"),
+    ("plant", "daffodil"),
+    ("daffodil", "lilac"),
+    ("flower", "petal"),
+    ("plant", "petal"),
+    ("banana", "lilac"),
+]
+
+for strf, strs in combis:
+    fst = eval(strf)
+    snd = eval(strs)
+    print(f"{strf} >= {strs}: {fr(fst, snd):.2f}")

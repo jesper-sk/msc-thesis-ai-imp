@@ -1,3 +1,6 @@
+"""Script attempting to train a small-ish neural network with semcor as training data.
+"""
+
 # %%
 from pathlib import Path
 

@@ -13,7 +13,7 @@ class Vectorise(Command):
     def add_arguments(parser: ArgumentParser) -> None:
         parser.add_argument(
             "data",
-            choices=["coarsewsd", "wsdeval"],
+            choices=["coarsewsd", "wsdeval", "bookcorpus"],
             help="the type of dataset to vectorise: coarsewsd=CoarseWSD-20; wsdeval=WSD Evaluation Framework",
         )
         parser.add_argument(
@@ -99,6 +99,18 @@ class Vectorise(Command):
         with open(out_path / "labels.txt", "w") as file:
             file.write("\n".join([instance.identifier for instance in instances]))
 
+    @staticmethod
+    def bookcorpus(args: Namespace, vectoriser, out_path: Path) -> None:
+        import numpy as np
+
+        from ..vectorise import vectorise_bookcorpus
+
+        for synset, embedding in vectorise_bookcorpus(
+            vectoriser, args.path, args.batchsize
+        ):
+            fn = out_path / f"{synset}.embeddings.npy"
+            np.save(fn, embedding)
+
     @classmethod
     def run(cls, args: Namespace) -> None:
         from ..util.path import validate_and_create_dir
@@ -115,6 +127,5 @@ class Vectorise(Command):
         {
             "coarsewsd": cls.coarsewsd,
             "wsdeval": cls.wsdeval,
-        }[
-            args.data
-        ](args, vectoriser, out_path)
+            "bookcorpus": cls.bookcorpus,
+        }[args.data](args, vectoriser, out_path)

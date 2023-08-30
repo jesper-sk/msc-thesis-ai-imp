@@ -1,7 +1,7 @@
 # Standard library
-import itertools as it
 from abc import ABC, abstractmethod
-from typing import Iterable, Iterator, Sequence
+from pathlib import Path
+from typing import Iterator, Sequence
 
 # Third-party imports
 import numpy as np
@@ -88,6 +88,60 @@ def vectorise_coarsewsd20(
                     )
                 )
             )
+
+
+def vectorise_bookcorpus(
+    vectoriser: Vectoriser, path: Path, batch_size: int = 1
+) -> Iterator[tuple[str, np.ndarray]]:
+    """Generate contextual embeddings of the target words of a CoarseWSD-20
+    dataset.
+
+    Parameters
+    ----------
+    `vectoriser : Vectoriser`
+        The vectoriser to use.
+    `dataset : Path`
+        The directory where the sentences can be found
+    `batch_size : int`, optional
+        The size of the batches to use, by default 1. If `len(data)` is not
+        divisible by `batch_size`, the last batch will be smaller.
+
+    Returns
+    -------
+    `Iterator[tuple[str, np.ndarray]]`
+        An iterator over the dataset key and the corresponding contextual
+        embeddings.
+
+        The key is of the form `"{word}.{split}"`, where `word` is
+        the target word and `split` is either `"train"` or `"test"`.
+    """
+    for sfn in path.glob("*.sentences.txt"):
+        synset = ".".join(sfn.stem.split(".")[:-1])
+
+        if (path / f"{synset}.embeddings.npy").exists():
+            print(f"Skipping synset '{synset}'")
+            continue
+
+        pfn = path / f"{synset}.target_ids.txt"
+
+        with open(sfn, "r") as sfile, open(pfn, "r") as pfile:
+            tokens = [
+                TokenInput(sentence.split(" "), int(position))
+                for sentence, position in zip(sfile, pfile)
+            ]
+
+        yield synset, np.concatenate(
+            tuple(
+                tqdm(
+                    map(
+                        lambda x: x.numpy(),
+                        vectoriser.forward(tokens, batch_size=batch_size),
+                    ),
+                    f"Vectorising synset '{synset}'",
+                    num_batches(len(tokens), batch_size),
+                )
+            )
+        )
 
 
 def vectorise_wsdeval(
