@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import sqrt
 from typing import Any
 
 import numpy as np
@@ -62,15 +63,19 @@ class Ellipsoid:
 
 class Conceptor(np.ndarray):
     @staticmethod
-    def from_state_matrix(matrix: ArrayLikeFloat, aperture: float = 10, axis: int = 0):
+    def make_correlation_matrix(matrix: ArrayLikeFloat, axis: int = 0):
         matrix = np.asarray(matrix)
         if axis == 0:
             matrix = matrix.T
-        # correlation_matrix = np.corrcoef(np.asarray(matrix).T)
-        sample_count = matrix.shape[0]
-        correlation_matrix = (matrix @ matrix.T) / sample_count
 
-        return Conceptor.from_correlation_matrix(correlation_matrix, aperture)
+        sample_count = matrix.shape[0]
+        return (matrix @ matrix.T) / sample_count
+
+    @staticmethod
+    def from_state_matrix(matrix: ArrayLikeFloat, aperture: float = 10, axis: int = 0):
+        return Conceptor.from_correlation_matrix(
+            Conceptor.make_correlation_matrix(matrix, axis), aperture
+        )
 
     @staticmethod
     def from_correlation_matrix(correlation_matrix: NDArray[Any], aperture: float = 10):
@@ -84,6 +89,11 @@ class Conceptor(np.ndarray):
         )
 
         return Conceptor(conceptor_matrix, aperture)
+
+    @staticmethod
+    def estimate_aperture(upper: float, tol: float = 1e-2):
+        """data/aperture_estimation.jpg"""
+        return sqrt(1 - tol) / (sqrt(upper) * sqrt(tol))
 
     def __new__(
         cls,

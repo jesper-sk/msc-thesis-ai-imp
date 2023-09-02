@@ -1,8 +1,12 @@
 # %%
 
+import itertools as it
+from math import sqrt
 from pathlib import Path
 
 import numpy as np
+import numpy.linalg as la
+from tqdm import tqdm
 
 from wsd.conceptors.conceptor import (
     Conceptor,
@@ -10,28 +14,77 @@ from wsd.conceptors.conceptor import (
     posneg_count_fraction,
     posneg_magnitude_fraction,
 )
+from wsd.data.bookcorpus import Lemma, get_synset_conceptors, get_synset_embeddings
+
+# %%
 
 p = Path("../data/bookcorpus/prepared")
 
-
-def conceptor(lemma: str, idx: int):
-    emb_name = f"{lemma}.n.{idx:02d}.embeddings.npy"
-    embeddings = np.load(p / emb_name)
-    return Conceptor.from_state_matrix(embeddings, aperture=0.3)
-
+embeddings = get_synset_embeddings(p)
+conceptors = get_synset_conceptors(synset_embeddings=embeddings)
 
 # %%
-plant = conceptor("plant", 2)
-fruit = conceptor("fruit", 1)
-apple = conceptor("apple", 1)
-berry = conceptor("berry", 1)
-banana = conceptor("banana", 2)
-flower = conceptor("flower", 1)
-daffodil = conceptor("daffodil", 1)
-blackberry = conceptor("blackberry", 1)
-branch = conceptor("branch", 2)
-petal = conceptor("petal", 1)
-lilac = conceptor("lilac", 1)
+"""Conceptor aperture estimation as per cwsd. Pick an aperture such that the asymptote of 
+f(x) = x / (x + a**-2) is around the max singular value of the embedding correlation 
+
+"""
+corrs = (Conceptor.make_correlation_matrix(e) for e in embeddings.values())
+singular_values = np.array(
+    [la.svd(c)[1] for c in tqdm(corrs, total=len(embeddings))]
+).flatten()
+singular_values.sort()
+
+
+# %% Helper methods
+
+
+def ap(max_sv, tol=1e-2):
+    return sqrt(1 - tol) / (sqrt(max_sv) * sqrt(tol))
+
+
+def c(lemma: Lemma, idx: int):
+    return conceptors[lemma][idx]
+
+
+def e(lemma: Lemma, idx: int):
+    return embeddings[lemma][idx]
+
+
+def sent(lemma: Lemma, idx: int, count: int = 1, offset: int = 0):
+    with open(
+        f"../data/bookcorpus/prepared/{lemma}.n.{idx:02d}.sentences.txt", "r"
+    ) as file:
+        return list(it.islice(file, offset, offset + count))
+
+
+___wordnet_definitions: dict[str, str] = {}
+
+
+def defn(lemma: Lemma, idx: int):
+    from nltk.corpus import wordnet
+
+    key = f"{lemma}.n.{idx}"
+    return ___wordnet_definitions.get(key, wordnet.synset(key).definition())  # type: ignore
+
+
+def count(lemma: Lemma):
+    return len(embeddings[lemma])
+
+
+fr = posneg_magnitude_fraction
+
+# %%
+plant = c("plant", 2)
+fruit = c("fruit", 1)
+apple = c("apple", 1)
+berry = c("berry", 1)
+banana = c("banana", 2)
+flower = c("flower", 1)
+daffodil = c("daffodil", 1)
+blackberry = c("blackberry", 1)
+branch = c("branch", 2)
+petal = c("petal", 1)
+lilac = c("lilac", 1)
 # %%
 combis = [
     ("fruit", "berry"),
@@ -54,3 +107,32 @@ for strf, strs in combis:
     fst = eval(strf)
     snd = eval(strs)
     print(f"{strf} >= {strs}: {fr(fst, snd):.2f}")
+
+# %% Full SSM
+
+all_labels, all_conceptors = zip(
+    *[
+        (f"{lemma}.{idx}", conceptor)
+        for lemma, lemma_conceptors in conceptors.items()
+        for idx, conceptor in lemma_conceptors.items()
+    ]
+)
+
+# %%
+n = len(all_conceptors)
+ssm = np.zeros((n, n))
+gen = it.combinations(enumerate(all_conceptors), 2)
+
+for (i, c1), (j, c2) in tqdm(gen):
+    val = fr(c1, c2)
+    ssm[i, j] = val
+    ssm[j, i] = -val
+
+np.save("../data/ssm.npy", ssm)
+import matplotlib.pyplot as plt
+
+plt.matshow(ssm)
+# %%
+
+
+# %%
