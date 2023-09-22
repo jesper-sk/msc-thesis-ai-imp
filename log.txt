@@ -1,0 +1,15 @@
+[23-09-14]
+We hebben net SSMs gemaakt obv conceptors met onze eigen metric van loewner-orderedness.
+Observaties
+- Woorden met veel occurrences lijken accurater te zijn (bv. fruit/plant worden gezien als erg abstract)
+- Woorden met een andere semantische context worden op schijnbaar arbitraire wijze aan elkaar gerelateerd
+    - Eigenlijk missen we nog een metric van in hoeverre woorden aan elkaar gerelateerd zijn. Kan dmv Wordnet similarity, maar dat is cheaten omdat die werkt met de hypo/hypernymy graph die we nou juist proberen te extraheren
+    - Kunnen we wegmoffelen door sub-SSMs te pakken van semantisch gerelateerde woorden (boom, plant, voedsel, etc)
+- Het zou kunnen dat woorden met veel occurrences standaard als abstracter worden gezien, en woorden met weinig occurrences standaard als minder abstract. 
+    - Lastig om te achterhalen of dat een probleem/eigenschap is van implementatie of gewoon resultaat, aangezien specifiekere termen per definitie minder vaak voor komen dan bredere termen (tot op zekere hoogte, bv "entity" dan weer niet dat is te abstract)
+     
+[23-09-15]
+We proberen mooie boompjes te maken door de pairwise abstraction matrix te zien als een adjacency matrix (geclampt op 0, 1).
+- In deze graaf zit alle info van de matrix ge-encodeerd
+- Destilleren van een boom kan dmv "minimum spanning tree" (boom die de som van weights minimaliseert), maar daar komen geen goeie bomen uit
+- Andere optie is de "transitive reduction" te pakken -- komt geen boom uit, maar wel een veel beterdere graaf

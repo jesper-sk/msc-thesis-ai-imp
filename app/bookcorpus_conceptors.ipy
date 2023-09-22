@@ -60,6 +60,16 @@ def sent(lemma: Lemma, idx: int, count: int = 1, offset: int = 0):
 ___wordnet_definitions: dict[str, str] = {}
 
 
+def key(lemma: Lemma, idx: int):
+    return f"{lemma}.n.{idx:02d}"
+
+
+def wn(lemma: Lemma, idx: int):
+    from nltk.corpus import wordnet
+
+    return wordnet.synset(key(lemma, idx))
+
+
 def defn(lemma: Lemma, idx: int):
     from nltk.corpus import wordnet
 
@@ -133,6 +143,15 @@ import matplotlib.pyplot as plt
 
 plt.matshow(ssm)
 # %%
+with open("../data/ssm_labels.txt", "r") as file:
+    labels = [f.strip().split(".") for f in file.readlines()]
 
+data = [(key(l[0], int(l[1])), wn(l[0], int(l[1]))) for l in labels]
+
+with open("../data/ssm_labels.csv", "w") as file:
+    for this_key, this_wn in data:
+        file.write(
+            f"{this_key}|{this_wn.lexname()}|{this_wn.definition()}|{(this_wn.examples() or [''])[0]}\n"
+        )
 
 # %%

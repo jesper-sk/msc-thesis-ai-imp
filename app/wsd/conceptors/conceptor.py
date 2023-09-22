@@ -14,6 +14,14 @@ from numpy._typing import ArrayLike, NDArray
 ArrayLikeFloat = tp._ArrayLikeFloat_co
 
 
+def deg_to_rad(deg: float):
+    return (2 * np.pi * deg) / 360
+
+
+def rad_to_deg(rad: float):
+    return (rad * 360) / (2 * np.pi)
+
+
 def is_square_matrix(arr: NDArray[Any]):
     shape = arr.shape
     return len(shape) == 2 and shape[0] == shape[1]
@@ -48,8 +56,14 @@ class Ellipse:
     semiaxis_y: float
     angle: float
 
-    def to_patch(self) -> EllipsePatch:
-        return EllipsePatch((0, 0), self.semiaxis_x, self.semiaxis_y, self.angle)
+    def to_patch(self, **kwargs) -> EllipsePatch:
+        return EllipsePatch(
+            (0, 0),
+            self.semiaxis_x * 2,
+            self.semiaxis_y * 2,
+            angle=rad_to_deg(self.angle),
+            **kwargs,
+        )
 
 
 @dataclass

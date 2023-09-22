@@ -1,0 +1,121 @@
+# %%
+import matplotlib.pyplot as plt
+import numpy as np
+import numpy.linalg as la
+from matplotlib.patches import Ellipse as MEllipse
+
+from wsd.conceptors.conceptor import (
+    Conceptor,
+    Ellipse,
+    angle_between_vectors,
+    lissajous,
+)
+from wsd.util.angle import rad_to_deg
+
+# %%
+
+points = lissajous(1, 2, 0.2, np.arange(0, 2 * np.pi + 0.1, 0.1))
+points *= np.array([1.7, 1])
+angle = 34 / 180 * np.pi
+rot = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
+points = np.apply_along_axis(lambda s: rot @ s, 1, points)
+
+x, y = zip(*points)
+
+plt.scatter(x, y)
+
+# %%
+
+
+def ellipse(mat) -> Ellipse:
+    """https://en.wikipedia.org/wiki/Ellipsoid#As_a_quadric"""
+    eigenvalues, eigenvectors = la.eig(mat)
+    semiaxes = tuple(eigenvalues)
+
+    ellipse_principal_axis_x = eigenvectors[:2, 0]
+    unit_axis_x = np.array([0, 1])
+
+    angle_rad = angle_between_vectors(ellipse_principal_axis_x, unit_axis_x)
+
+    return Ellipse(semiaxes[0], semiaxes[1], angle_rad)
+
+
+r = (points.T @ points) / points.shape[0]
+r_ellipse = ellipse(r)
+
+c = Conceptor.from_correlation_matrix(r, aperture=1)
+c_ellipse = c.ellipse()
+
+plt.scatter(x, y)
+ax = plt.gca()
+ax.add_patch(
+    r_ellipse.to_patch(fc="none", ec="blue"),
+)
+ax.add_patch(c_ellipse.to_patch(fc="none", ec="green"))
+unit = ax.add_patch(MEllipse((0, 0), 2, 2))
+unit.set_edgecolor("red")
+unit.set_facecolor("none")
+
+# %%
+
+# %%
+
+# %%
+fig, ax = plt.subplots(figsize=(3, 3))
+ax.set_aspect("equal")
+
+ax.scatter(x, y, c="grey", marker=".")
+ell = ax.add_patch(
+    MEllipse(
+        (0, 0),
+        r_ellipse.semiaxis_x * 2,
+        r_ellipse.semiaxis_y * 2,
+        angle=rad_to_deg(r_ellipse.angle),
+        lw=2,
+        ls="-",
+        fc="none",
+        ec="black",
+    )
+)
+ax.set_xlim([min(x) - 0.1, max(x) + 0.1])
+ax.set_ylim([min(y) - 0.1, max(y) + 0.1])
+ax.set_yticks([1, 0, -1])
+ax.set_xticks([1, 0, -1])
+fig.savefig("../data/plots/conceptor_1.pdf", bbox_inches="tight", pad_inches=0)
+# %%
+
+# %%
+# %%
+fig, ax = plt.subplots(figsize=(3, 3))
+ax.set_aspect("equal")
+
+r_patch = ax.add_patch(r_ellipse.to_patch(lw=2, ls="-", fc="none", ec="grey"))
+c_patch = ax.add_patch(c_ellipse.to_patch(lw=2, ls="-", fc="none", ec="black"))
+unit = ax.add_patch(MEllipse((0, 0), 2, 2, lw=1, fc="none", ls=":", ec="black"))
+
+# ax.set_xlim([min(x)-.1, max(x)+.1])
+# ax.set_ylim([min(y)-.1, max(y)+.1])
+ax.set_yticks([1, 0, -1])
+ax.set_xticks([1, 0, -1])
+fig.savefig("../data/plots/conceptor_2.pdf", bbox_inches="tight", pad_inches=0)
+
+# %%
+fig, ax = plt.subplots(figsize=(3, 3))
+ax.set_aspect("equal")
+
+r_patch = ax.add_patch(r_ellipse.to_patch(lw=1, ls=":", fc="none", ec="black"))
+unit = ax.add_patch(MEllipse((0, 0), 2, 2, lw=1, fc="none", ls=":", ec="black"))
+
+for aperture in [0.5, 1, 1.5, 2, 10]:
+    print(aperture)
+    ax.add_patch(
+        Conceptor.from_correlation_matrix(r, aperture=aperture)
+        .ellipse()
+        .to_patch(lw=2, ls="-", fc="none", ec="black")
+    )
+
+# ax.set_xlim([min(x)-.1, max(x)+.1])
+# ax.set_ylim([min(y)-.1, max(y)+.1])
+ax.set_yticks([1, 0, -1])
+ax.set_xticks([1, 0, -1])
+fig.savefig("../data/plots/conceptor_3.pdf", bbox_inches="tight", pad_inches=0)
