@@ -43,7 +43,7 @@ def ellipse(mat) -> Ellipse:
 r = (points.T @ points) / points.shape[0]
 r_ellipse = ellipse(r)
 
-c = Conceptor.from_correlation_matrix(r, aperture=1)
+c = Conceptor.from_correlation_matrix(r, aperture=0)
 c_ellipse = c.ellipse()
 
 plt.scatter(x, y)
@@ -105,8 +105,10 @@ ax.set_aspect("equal")
 
 r_patch = ax.add_patch(r_ellipse.to_patch(lw=1, ls=":", fc="none", ec="black"))
 unit = ax.add_patch(MEllipse((0, 0), 2, 2, lw=1, fc="none", ls=":", ec="black"))
+c_patch = ax.add_patch(c_ellipse.to_patch(lw=2, ls="-", fc="none", ec="black"))
 
-for aperture in [0.5, 1, 1.5, 2, 10]:
+
+for aperture in [0.5, 1.5, 2, 10]:
     print(aperture)
     ax.add_patch(
         Conceptor.from_correlation_matrix(r, aperture=aperture)

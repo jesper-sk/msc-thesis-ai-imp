@@ -1,39 +1,33 @@
 {
-    "cSpell.words": [
-        "coarsewsd",
-        "cwsd",
-        "modeling",
-        "nshot",
-        "outofdomain",
-        "pretrained",
-        "PYTORCH",
-        "synset",
-        "synsets",
-        "tqdm",
-        "Vectoriser"
-    ],
-    "[python]": {
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": true
-        },
-        "editor.rulers": [
-            90
-        ]
-    },
-    "python.analysis.typeCheckingMode": "basic",
-    "python.linting.pylintEnabled": false,
-    "python.linting.flake8Enabled": true,
-    "python.linting.mypyEnabled": true,
-    "isort.args": [
-        "--profile",
-        "black"
-    ],
-    "python.analysis.extraPaths": [
-        "./repos/ewiser"
-    ],
-    "autoDocstring.docstringFormat": "numpy",
+  "cSpell.words": [
+    "coarsewsd",
+    "cwsd",
+    "modeling",
+    "nshot",
+    "outofdomain",
+    "pretrained",
+    "PYTORCH",
+    "synset",
+    "synsets",
+    "tqdm",
+    "Vectoriser"
+  ],
+  "[python]": {
     "editor.formatOnSave": true,
-    "python.formatting.provider": "black"
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    },
+    "editor.rulers": [90]
+  },
+  "python.analysis.typeCheckingMode": "basic",
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": true,
+  "python.linting.mypyEnabled": true,
+  "isort.args": ["--profile", "black"],
+  "python.analysis.extraPaths": ["./repos/ewiser"],
+  "autoDocstring.docstringFormat": "numpy",
+  "editor.formatOnSave": true,
+  "python.formatting.provider": "black",
+  "cSpell.enableFiletypes": ["!python"]
 }

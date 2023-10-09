@@ -3,19 +3,39 @@ from __future__ import annotations
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.gridspec import GridSpec
 
 with open("../data/ssm_labels.txt", "r") as file:
     labels = [ln.strip() for ln in file.readlines()]
 
+
+def format_label(label):
+    parts = label.strip().split(".")
+    return f"{parts[0]}.{int(parts[2])}"
+
+
 ssm = np.load("../data/ssm_ap0.58.npy")
+with open("../data/bookcorpus/plots/all.csv", "r") as file:
+    count_dict = {
+        format_label(x[0]): int(x[1].strip())
+        for x in [line.split(",") for line in file.readlines()]
+    }
 
 
-def label_subset(labels, indices):
-    return [labels[i] for i in indices]
+def label_subset(labels, indices=None):
+    return [labels[i] for i in indices] if indices else labels
 
 
-def ssm_subset(matrix, indices):
-    return np.take(np.take(matrix, indices, axis=0), indices, axis=1)
+def count_subset(counts, indices=None):
+    return [counts[idx] for idx in indices] if indices else counts.values()
+
+
+def ssm_subset(matrix, indices=None):
+    return (
+        np.take(np.take(matrix, indices, axis=0), indices, axis=1)
+        if indices
+        else matrix
+    )
 
 
 def delete_half(matrix):
@@ -28,7 +48,7 @@ def delete_half(matrix):
 def plot_ssm(indices, cmap="BrBG"):
     matrix_subset = ssm_subset(ssm, indices) if indices else ssm
     labels_subset = label_subset(labels, indices) if indices else labels
-    amount = len(indices)
+    amount = len(labels_subset)
     figsize = max(1, amount // 3.8)
 
     plt.figure(figsize=(figsize, figsize), dpi=80)
@@ -202,57 +222,60 @@ granimal = (
     292,
 ) + tops
 plant = (
-    24,
-    28,
-    30,
-    36,
-    40,
-    44,
-    45,
-    49,
-    50,
-    56,
-    58,
-    66,
-    67,
-    76,
-    88,
-    89,
-    95,
-    103,
-    105,
-    120,
-    123,
-    125,
-    135,
-    137,
-    144,
-    152,
-    154,
-    155,
-    156,
-    160,
-    176,
-    179,
-    180,
-    184,
-    205,
-    206,
-    213,
-    216,
-    218,
-    222,
-    226,
-    230,
-    234,
-    268,
-    270,
-    278,
-    283,
-    284,
-    285,
-    288,
-    290,
+    30,  # blackberry
+    45,  # capsicum
+    # 50, # chrysantemum2
+    49,  # chrysantemum1
+    56,  # coffee
+    58,  # corn
+    66,  # daffodil
+    67,  # daisy
+    76,  # eggplant
+    123,  # honeysuckle
+    125,  # hyacinth
+    135,  # larkspur
+    144,  # lilac
+    152,  # melon
+    155,  # myrtle
+    # 156, # myrtle2
+    160,  # oleander
+    176,  # pea
+    179,  # peony
+    180,  # pepper
+    184,  # petal
+    205,  # pod
+    206,  # poppy
+    213,  # radish_plant
+    216,  # rocket
+    222,  # rose
+    226,  # sage
+    278,  # tulip
+    268,  # tobacco
+    270,  # tomato
+    285,  # violet
+    284,  # verbena
+    288,  # wallflower
+    # MEDS
+    24,  # bean
+    44,  # cabbage
+    154,  # moss
+    103,  # grape
+    # PARTS OF
+    36,  # branch
+    40,  # bud
+    230,  # seed
+    137,  # leaf
+    218,  # root
+    28,  # berry
+    # TOPS
+    283,  # vegetable
+    95,  # fruit
+    120,  # herb
+    105,  # grass
+    234,  # shrub
+    88,  # flower1
+    89,  # florew2
+    # WEIRD
 ) + tops
 tree = (
     6,
@@ -267,8 +290,8 @@ tree = (
     141,
     149,
     164,
-    171,
     178,
+    171,
     186,
     218,
     273,
@@ -299,7 +322,164 @@ actual_tree = (
     166,
 )
 
+
 # %%
+def trunc(s, length):
+    return s[: length - 3] + "~" + s[-2:] if len(s) > length else s
+
+
+index_sets = [food, plant]
+
+num_synsets = list(map(len, index_sets))
+mat_sizes = [num // 3.8 for num in num_synsets]
+
+COUNT_BARH_WIDTH = 2
+CBAR_HEIGHT = 0.2
+CMAP = "BrBG_r"
+TRUNC_L = 9
+
+total_height = sum(mat_sizes) + CBAR_HEIGHT
+total_width = max(mat_sizes) + COUNT_BARH_WIDTH
+
+mat_height_ratios = [size / total_height for size in mat_sizes]
+cbar_height_ratio = CBAR_HEIGHT / total_height
+mats_width_ratio = max(mat_sizes) / total_width
+barh_width_ratio = COUNT_BARH_WIDTH / total_width
+
+gs = GridSpec(
+    nrows=len(index_sets) + 1,
+    ncols=2,
+    width_ratios=[mats_width_ratio, barh_width_ratio],
+    height_ratios=[*mat_height_ratios, cbar_height_ratio],
+)
+
+f = plt.figure(figsize=(total_width, total_height))
+
+hbar = None
+mat_axes, barh_axes = zip(
+    *[
+        (
+            mat := f.add_subplot(gs[i, 0]),
+            hbar := f.add_subplot(gs[i, 1], sharey=mat, sharex=hbar),
+        )
+        for i in range(len(index_sets))
+    ]
+)
+cbar_axis = f.add_subplot(gs[len(index_sets), 0])
+
+gs.tight_layout(f, h_pad=5, w_pad=0)
+
+im = None
+
+for indices, ax in zip(index_sets, mat_axes):
+    subssm = ssm_subset(ssm, indices)
+    sublabels = label_subset(labels, indices)
+    amount = len(indices)
+
+    im = ax.matshow(subssm, cmap=CMAP)
+    ax.set_yticks(range(amount), sublabels)
+    ax.set_xticks(
+        range(amount), [trunc(lab, TRUNC_L) for lab in sublabels], rotation=-90
+    )
+
+for indices, ax in zip(index_sets, barh_axes):
+    sublabels = label_subset(labels, indices)
+    counts = count_subset(count_dict, sublabels)
+
+    ypos = range(len(indices))
+    ax.barh(ypos, counts, align="center", edgecolor="black", linewidth=1, color="none")
+    ax.set_title("№ occurrences (log)")
+    ax.set_xscale("log")
+    plt.setp(ax.get_yticklabels(), visible=False)
+
+cbar = f.colorbar(
+    im,
+    cax=cbar_axis,
+    orientation="horizontal",
+)
+
+cbar.ax.set_xticks(
+    [-1, 0, 1],
+    [
+        "-1 \n($\\it{y}$ is less abstract than $\\it{x}$)",
+        "0\n(no abstraction)",
+        "1\n($\\it{y}$ is more abstract than $\\it{x}$)",
+    ],
+)
+
+f.savefig("ssms.pdf", bbox_inches="tight")
+
+plt.show()
+
+# %%
+
+# %%
+
+
+# %%
+def plot_ssmc(indices, cmap="BrBG_r", count_size=2, cbar_size=0.1):
+    matrix_subset = ssm_subset(ssm, indices) if indices else ssm
+    labels_subset = label_subset(labels, indices) if indices else labels
+    amount = len(labels_subset)
+    mat_size = max(1, amount // 3.8)
+    counts = count_subset(count_dict, labels_subset)
+    barh_ypos = range(amount)
+
+    barh_width_ratio = count_size / (count_size + mat_size)
+    mat_width_ratio = 1 - barh_width_ratio
+    cbar_height_ratio = cbar_size / (cbar_size + mat_size)
+    mat_height_ratio = 1 - cbar_height_ratio
+
+    gs = GridSpec(
+        nrows=2,
+        ncols=2,
+        width_ratios=[mat_width_ratio, barh_width_ratio],
+        height_ratios=[mat_height_ratio, cbar_height_ratio],
+    )
+
+    f = plt.figure(
+        figsize=(
+            mat_size + count_size,
+            mat_size + cbar_size,
+        ),
+        layout="constrained",
+    )
+
+    ax1 = f.add_subplot(gs[0, 0])
+    ax2 = f.add_subplot(gs[0, 1], sharey=ax1)
+    # ax3 = f.add_subplot(gs[1, 1])
+    cax = f.add_subplot(gs[1, 0])
+
+    gs.tight_layout(f, pad=0)
+    gs.update(wspace=0.1, hspace=0.1)
+
+    im = ax1.matshow(matrix_subset, cmap=cmap)
+    ax1.set_yticks(range(amount), labels_subset)
+    ax1.set_xticks(range(amount), labels_subset, rotation=-90)
+
+    ax2.barh(
+        barh_ypos, counts, align="center", edgecolor="black", linewidth=1, color="none"
+    )
+    ax2.set_title("№ occurrences (log)")
+    # ax2.set_xticks([0, max(counts)], [0, int(max(counts)) + 1])
+    ax2.set_xscale("log")
+
+    plt.setp(ax2.get_yticklabels(), visible=False)
+
+    cbar = f.colorbar(
+        im,
+        cax=cax,
+        orientation="horizontal",
+    )
+
+    cbar.ax.set_xticks(
+        [-1, 0, 1],
+        ["→ less abstract than ↓", "no abstraction", "→ more abstract than ↓"],
+    )
+
+    return f
+
+
 import networkx as nx
 
 tree_subset = (256, 54, 171, 197, 148, 66)
@@ -310,14 +490,28 @@ idcs = plant
 tree_l = label_subset(labels, idcs)
 ssm_l = ssm_subset(ssm, idcs)
 
-plot_ssm(idcs)
+f = plot_ssmc(idcs)
+plt.show()
 
-adjacency = ssm_l.copy()
-adjacency[adjacency < 0.8] = 0
+# %%
 
-g = nx.from_numpy_array(adjacency, create_using=nx.DiGraph)
-g_named = nx.relabel_nodes(g, {i: label for i, label in enumerate(tree_l)})
-nx.draw(nx.transitive_reduction(g_named), with_labels=True)
+datasets = ["plant_subset", "tree", "food", "plant"]
+
+for ds in datasets:
+    idcs = eval(ds)
+
+    tree_l = label_subset(labels, idcs)
+    ssm_l = ssm_subset(ssm, idcs)
+
+    f = plot_ssmc(idcs)
+    f.savefig(f"{ds}.pdf", bbox_inches="tight")
+
+# adjacency = ssm_l.copy()
+# adjacency[adjacency < 0.8] = 0
+
+# g = nx.from_numpy_array(adjacency, create_using=nx.DiGraph)
+# g_named = nx.relabel_nodes(g, {i: label for i, label in enumerate(tree_l)})
+# nx.draw(nx.transitive_reduction(g_named), with_labels=True)
 # %%
 import itertools as it
 

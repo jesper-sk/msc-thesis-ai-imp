@@ -178,3 +178,13 @@ for lemma in lemmata:
 
 with open(plot_path / "all.csv", "w") as file:
     file.write("\n".join([f"{key},{value}" for key, value in all_lemma_count.items()]))
+
+
+# %%
+
+noun_to_synset: dict[str, set[str]] = defaultdict(set)
+synset_to_noun: dict[str, set[str]] = defaultdict(set)
+for (sentence, idx), synset in buffer.items():
+    noun = sentence.split(" ")[idx]
+    noun_to_synset[noun].add(synset.synset)
+    synset_to_noun[synset.synset].add(noun)
