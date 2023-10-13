@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><graph edgedefault="directed"><node id="coconut.3"/>
+<node id="palm.3"/>
+<node id="tree.1"/>
+<node id="pine.1"/>
+<edge source="palm.3" target="coconut.3"/>
+<edge source="tree.1" target="palm.3"/>
+<edge source="tree.1" target="pine.1"/>
+<edge source="pine.1" target="coconut.3"/>
+</graph></graphml>

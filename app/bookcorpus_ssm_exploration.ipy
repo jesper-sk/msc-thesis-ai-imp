@@ -89,56 +89,67 @@ def maximal_antichains(G, topo_order=None):
 
 
 # %% Index sets
-tops = (80, 166, 197, 256)
+
+LVL1 = "Level 1"
+LVL2 = "Level 2"
+LVL3 = "Level 3"
+PO = "Part-of"
+
+tops = (80, 256)  # entity  # thing
 food = (
-    2,
-    5,
-    18,
-    21,
-    22,
-    27,
-    29,
-    33,
-    43,
-    51,
-    52,
-    53,
-    55,
-    57,
-    60,
-    62,
-    71,
-    74,
-    75,
-    85,
-    95,
-    101,
-    102,
-    112,
-    118,
-    121,
-    127,
-    129,
-    140,
-    151,
-    159,
-    162,
-    174,
-    177,
-    181,
-    182,
-    185,
-    212,
-    225,
-    227,
-    230,
-    243,
-    247,
-    249,
-    251,
-    269,
-    282,
+    5,  # apple
+    18,  # avocado
+    21,  # banana
+    22,  # bean
+    29,  # blackberry
+    33,  # blush_wine
+    43,  # cabbage
+    51,  # citron
+    52,  # coconut1
+    53,  # coconut2
+    55,  # coffee
+    57,  # coffee_bean
+    60,  # corn
+    62,  # corn_whiskey
+    75,  # eggplant
+    85,  # fig
+    101,  # gelatin
+    102,  # grape
+    # 118,  # hay
+    140,  # lemon
+    151,  # melon
+    159,  # nectar
+    162,  # orange
+    174,  # pea
+    177,  # pear
+    181,  # pepper3
+    182,  # pepper4
+    185,  # pieplant
+    212,  # radish
+    225,  # sage
+    247,  # strawberry
+    249,  # sugar
+    269,  # tomato
+    # MEDS
+    27,  # berry
+    71,  # dessert
+    127,  # jam
+    129,  # jelly
+    227,  # salad
+    230,  # seed
+    251,  # sweet
+    # PARTS OF
+    243,  # spice
+    # TOPS
+    2,  # ambrosia
+    112,  # greens
+    95,  # fruit
+    74,  # eatage
+    282,  # vegetable
+    121,  # herb
 ) + tops
+
+food_sections = {5: LVL1, 27: LVL2, 243: PO, 2: LVL3}
 granimal = (
     1,
     6,
@@ -275,29 +286,40 @@ plant = (
     234,  # shrub
     88,  # flower1
     89,  # florew2
-    # WEIRD
+    166,  # organism
+    197,  # plant
 ) + tops
+
+plant_sections = {30: LVL1, 24: LVL2, 36: PO, 283: LVL3}
+
 tree = (
-    6,
-    15,
-    19,
-    20,
-    25,
-    54,
-    72,
-    77,
-    84,
-    141,
-    149,
-    164,
-    178,
-    171,
-    186,
-    218,
-    273,
-    276,
-    292,
+    6,  # apple
+    15,  # ash
+    19,  # avocado
+    20,  # banana #
+    25,  # beech
+    54,  # coconut
+    72,  # dogwood #
+    77,  # elm
+    84,  # fig
+    141,  # lemon
+    149,  # maple
+    164,  # orange
+    178,  # pear
+    292,  # willow
+    186,  # pine
+    # MED
+    171,  # palm
+    # PARTS
+    218,  # root
+    276,  # trunk
+    # TOP
+    273,  # tree
+    166,  # organism
+    197,  # plant
 ) + tops
+
+tree_sections = {6: LVL1, 171: LVL2, 218: PO, 273: LVL3}
 actual_tree = (
     6,
     15,
@@ -324,17 +346,23 @@ actual_tree = (
 
 
 # %%
+plt.rcParams["font.size"] = 13  # 17
+
+
 def trunc(s, length):
     return s[: length - 3] + "~" + s[-2:] if len(s) > length else s
 
 
-index_sets = [food, plant]
+index_sets = [tree]  # [food, plant]
+section_sets = [tree_sections]  # [food_sections, plant_sections]
+
+assert len(index_sets) == len(section_sets)
 
 num_synsets = list(map(len, index_sets))
 mat_sizes = [num // 3.8 for num in num_synsets]
 
-COUNT_BARH_WIDTH = 2
-CBAR_HEIGHT = 0.2
+COUNT_BARH_WIDTH = 4.5
+CBAR_HEIGHT = 0.1
 CMAP = "BrBG_r"
 TRUNC_L = 9
 
@@ -370,20 +398,34 @@ cbar_axis = f.add_subplot(gs[len(index_sets), 0])
 gs.tight_layout(f, h_pad=5, w_pad=0)
 
 im = None
+label_sets = [label_subset(labels, indices) for indices in index_sets]
 
-for indices, ax in zip(index_sets, mat_axes):
-    subssm = ssm_subset(ssm, indices)
+
+def mklab(indices, sections):
     sublabels = label_subset(labels, indices)
+    for i, idx in enumerate(indices):
+        if idx not in sections:
+            continue
+        sublabels[i] = f"$\\bf{{{sections[idx]}}} $ - {sublabels[i]}"
+
+    return sublabels
+
+
+for sublabels, sections, indices, ax in zip(
+    label_sets, section_sets, index_sets, mat_axes
+):
+    subssm = ssm_subset(ssm, indices)
     amount = len(indices)
 
+    sectioned_sublabels = mklab(indices, sections)
+
     im = ax.matshow(subssm, cmap=CMAP)
-    ax.set_yticks(range(amount), sublabels)
+    ax.set_yticks(range(amount), sectioned_sublabels)
     ax.set_xticks(
         range(amount), [trunc(lab, TRUNC_L) for lab in sublabels], rotation=-90
     )
 
-for indices, ax in zip(index_sets, barh_axes):
-    sublabels = label_subset(labels, indices)
+for sublabels, indices, ax in zip(label_sets, index_sets, barh_axes):
     counts = count_subset(count_dict, sublabels)
 
     ypos = range(len(indices))
@@ -414,104 +456,26 @@ plt.show()
 # %%
 
 # %%
-
-
-# %%
-def plot_ssmc(indices, cmap="BrBG_r", count_size=2, cbar_size=0.1):
-    matrix_subset = ssm_subset(ssm, indices) if indices else ssm
-    labels_subset = label_subset(labels, indices) if indices else labels
-    amount = len(labels_subset)
-    mat_size = max(1, amount // 3.8)
-    counts = count_subset(count_dict, labels_subset)
-    barh_ypos = range(amount)
-
-    barh_width_ratio = count_size / (count_size + mat_size)
-    mat_width_ratio = 1 - barh_width_ratio
-    cbar_height_ratio = cbar_size / (cbar_size + mat_size)
-    mat_height_ratio = 1 - cbar_height_ratio
-
-    gs = GridSpec(
-        nrows=2,
-        ncols=2,
-        width_ratios=[mat_width_ratio, barh_width_ratio],
-        height_ratios=[mat_height_ratio, cbar_height_ratio],
-    )
-
-    f = plt.figure(
-        figsize=(
-            mat_size + count_size,
-            mat_size + cbar_size,
-        ),
-        layout="constrained",
-    )
-
-    ax1 = f.add_subplot(gs[0, 0])
-    ax2 = f.add_subplot(gs[0, 1], sharey=ax1)
-    # ax3 = f.add_subplot(gs[1, 1])
-    cax = f.add_subplot(gs[1, 0])
-
-    gs.tight_layout(f, pad=0)
-    gs.update(wspace=0.1, hspace=0.1)
-
-    im = ax1.matshow(matrix_subset, cmap=cmap)
-    ax1.set_yticks(range(amount), labels_subset)
-    ax1.set_xticks(range(amount), labels_subset, rotation=-90)
-
-    ax2.barh(
-        barh_ypos, counts, align="center", edgecolor="black", linewidth=1, color="none"
-    )
-    ax2.set_title("№ occurrences (log)")
-    # ax2.set_xticks([0, max(counts)], [0, int(max(counts)) + 1])
-    ax2.set_xscale("log")
-
-    plt.setp(ax2.get_yticklabels(), visible=False)
-
-    cbar = f.colorbar(
-        im,
-        cax=cax,
-        orientation="horizontal",
-    )
-
-    cbar.ax.set_xticks(
-        [-1, 0, 1],
-        ["→ less abstract than ↓", "no abstraction", "→ more abstract than ↓"],
-    )
-
-    return f
-
-
 import networkx as nx
 
-tree_subset = (256, 54, 171, 197, 148, 66)
+tree_subset = (54, 171, 273, 186)
 plant_subset = (197, 256, 66, 285, 88)
 
-idcs = plant
+flowers = (278, 197, 88, 166, 80, 66)
+
+idcs = tree_subset
 
 tree_l = label_subset(labels, idcs)
 ssm_l = ssm_subset(ssm, idcs)
 
-f = plot_ssmc(idcs)
-plt.show()
+adjacency = ssm_l.copy()
+adjacency[adjacency < 0.7] = 0
 
-# %%
-
-datasets = ["plant_subset", "tree", "food", "plant"]
-
-for ds in datasets:
-    idcs = eval(ds)
-
-    tree_l = label_subset(labels, idcs)
-    ssm_l = ssm_subset(ssm, idcs)
-
-    f = plot_ssmc(idcs)
-    f.savefig(f"{ds}.pdf", bbox_inches="tight")
-
-# adjacency = ssm_l.copy()
-# adjacency[adjacency < 0.8] = 0
-
-# g = nx.from_numpy_array(adjacency, create_using=nx.DiGraph)
-# g_named = nx.relabel_nodes(g, {i: label for i, label in enumerate(tree_l)})
-# nx.draw(nx.transitive_reduction(g_named), with_labels=True)
+g = nx.from_numpy_array(adjacency, create_using=nx.DiGraph)
+g_named = nx.relabel_nodes(g, {i: label for i, label in enumerate(tree_l)})
+g_trans = nx.transitive_reduction(g_named)
+nx.draw(g_trans, with_labels=True)
+nx.write_graphml(g_trans, "graph.graphml")
 # %%
 import itertools as it
 
@@ -531,4 +495,14 @@ nx.draw(
     ),
     with_labels=True,
 )
+# %%
+# t-test
+
+mean_abstraction = ssm.mean(axis=1)
+the_counts = [count_dict[lab] for lab in labels]
+
+import scipy.stats
+
+print(scipy.stats.pearsonr(mean_abstraction, the_counts))
+
 # %%
