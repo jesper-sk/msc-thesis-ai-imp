@@ -1,9 +1,11 @@
-bookcorpus/annotated
-bookcorpus/filtered
-bookcorpus/prepared
+bookcorpus/annotated/*
+bookcorpus/filtered/*
+bookcorpus/prepared/*
+bookcorpus/plots/*
+!bookcorpus/plots/all.csv
 
-coarsewsd/annotated
-coarsewsd/split
+coarsewsd/annotated/*
+coarsewsd/split/*
 
 vectorised
 
@@ -12,3 +14,6 @@ wsdeval/WSD_Evaluation_Framework
 ewiser.semcor+wngt.pt
 out.zip
 aperture_estimation.jpg
+
+!**/.gitkeep
+!**/README.md

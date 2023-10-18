@@ -1,0 +1,1 @@
+Fill this directory through the script at `repos/ewiser/bin/annotate_bookcorpus.py`.

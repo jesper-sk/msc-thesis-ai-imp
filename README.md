@@ -18,13 +18,24 @@
 
 3. Ensure the necessary project resources are installed.
     1. You can download WordNet 3.0 [here](http://wordnetcode.princeton.edu/3.0/WordNet-3.0.tar.gz). The default location to extract is `data/WordNet-3.0`.
-    1. The WSD Evaluation framework data can be downloaded from [here](http://lcl.uniroma1.it/wsdeval/). The default location to extrarct is `data/WSD_Evaluation_Framework`.
+    1. The WSD Evaluation framework data can be downloaded from [here](http://lcl.uniroma1.it/wsdeval/). The default location to extrarct is `data/wsdeval/WSD_Evaluation_Framework`.
     1. The XL-WSD data can be downloaded from [here](https://sapienzanlp.github.io/xl-wsd/) ("Data"). The default location to extract is `data/xl-wsd`. 
 
 3. Run the CLI of the project. This can be done through pipenv.
     ```sh
     pipenv run python app
     ```
+## Structure
+Implementational code can be found in three places. Firstly, there is the CLI, which can be run through the `pipenv run python app` command. The following functions are available:
+- `vectorise` is used to create CWEs from target sentences. 
+- `prep-ewiser` prepares the CoarseWSD-20 dataset to be interpreted by the EWISER model.
+- `split-embeddings` splits the CoarseWSD-20 embeddings into synset state clouds using ground truth.
+- `lemmas` extracts all lemmata from a WSD Evaluation Framework variant and saves them as a csv.
+- `filter-bookcorpus` filters the original BookCorpus set of sentences into those that use a given set of nouns.
+
+Secondly, there are a number of interactive scripts in the `app/` directory. These are designed to work in your editor's scientific mode, using "`% ##`" to specify individual code blocks. This should work at least in VSCode and JetBrains PyCharm. 
+
+Thirdly, the EWISER submodule (`repos/ewiser`) has some interfacing scripts in the `bin` directory. These are used to interface with the EWISER implementation (which was not made by me, see to the [submodule's README](https://github.com/jesper-sk/ewiser)).
 
 ## Running unit tests
 Run: 
@@ -37,3 +48,8 @@ pipenv run python -m unittest discover tests "*.py"
 2. Mypy static type analyser
 3. Flake8 linter
 4. _(optional)_ Pylint linter
+
+## Resources
+- [BookCorpus sentences sorted by synset](https://github.com/jesper-sk/msc-thesis-bookcorpus-synset-sentences)
+- [EWISER fork used in this repository](https://github.com/jesper-sk/ewiser)
+- [CoarseWSD fork used in this repository](https://github.com/jesper-sk/coarsewsd-20)

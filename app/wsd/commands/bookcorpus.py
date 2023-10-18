@@ -19,11 +19,15 @@ class FilterBookCorpus(Command):
             "-w",
             "--wordsfile",
             type=Path,
-            default=None,
+            default=Path("data/bookcorpus/selected-words.csv"),
             help="the path to the selected words CSV",
         )
         parser.add_argument(
-            "-o", "--out", type=str, default=None, help="the path to save the dataset"
+            "-o",
+            "--out",
+            type=str,
+            default=Path("data/bookcorpus/filtered"),
+            help="the path to save the dataset",
         )
         parser.add_argument(
             "-n",

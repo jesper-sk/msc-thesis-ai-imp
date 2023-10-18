@@ -1,3 +1,8 @@
+"""This file includes the code that calculates conceptors from the synset state clouds
+in data/bookcorpus/prepared/*.embeddings.npy. These can be created using the `vectorise`
+command in the CLI (see `pipenv run python app vectorise --help`).
+"""
+
 # %%
 
 import itertools as it
@@ -118,7 +123,7 @@ for strf, strs in combis:
     snd = eval(strs)
     print(f"{strf} >= {strs}: {fr(fst, snd):.2f}")
 
-# %% Full SSM
+# %% Get all the labels and concpetors
 
 all_labels, all_conceptors = zip(
     *[
@@ -128,7 +133,7 @@ all_labels, all_conceptors = zip(
     ]
 )
 
-# %%
+# %%  Calculate the full SSM
 n = len(all_conceptors)
 ssm = np.zeros((n, n))
 gen = it.combinations(enumerate(all_conceptors), 2)
@@ -138,17 +143,17 @@ for (i, c1), (j, c2) in tqdm(gen):
     ssm[i, j] = val
     ssm[j, i] = -val
 
-np.save("../data/ssm.npy", ssm)
+np.save("../data/bookcorpus/ssm_ap0.58.npy", ssm)
 import matplotlib.pyplot as plt
 
 plt.matshow(ssm)
 # %%
-with open("../data/ssm_labels.txt", "r") as file:
+with open("../data/bookcorpus/ssm_labels.txt", "r") as file:
     labels = [f.strip().split(".") for f in file.readlines()]
 
 data = [(key(l[0], int(l[1])), wn(l[0], int(l[1]))) for l in labels]
 
-with open("../data/ssm_labels.csv", "w") as file:
+with open("../data/bookcorpus/ssm_labels.csv", "w") as file:
     for this_key, this_wn in data:
         file.write(
             f"{this_key}|{this_wn.lexname()}|{this_wn.definition()}|{(this_wn.examples() or [''])[0]}\n"

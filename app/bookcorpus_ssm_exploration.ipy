@@ -1,3 +1,6 @@
+"""Visualisation scrips for the resulting pairwise abstraction matrix.
+"""
+
 # %%
 from __future__ import annotations
 

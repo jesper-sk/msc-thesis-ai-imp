@@ -1,3 +1,0 @@
-Uit combi van SemCor + BookCorpus een dataset van gerelateerde items pakken zdd
-- SemCor 'm heeft (om te trainen)
-- BookCorpus er een hele hoop van heeft (om conceptors uit te maken)
