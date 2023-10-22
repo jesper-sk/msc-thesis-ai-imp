@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec
 
-with open("../data/ssm_labels.txt", "r") as file:
+with open("../data/bookcorpus/ssm_labels.txt", "r") as file:
     labels = [ln.strip() for ln in file.readlines()]
 
 
@@ -17,7 +17,7 @@ def format_label(label):
     return f"{parts[0]}.{int(parts[2])}"
 
 
-ssm = np.load("../data/ssm_ap0.58.npy")
+ssm = np.load("../data/bookcorpus/ssm_ap0.58.npy")
 with open("../data/bookcorpus/plots/all.csv", "r") as file:
     count_dict = {
         format_label(x[0]): int(x[1].strip())
@@ -461,22 +461,28 @@ plt.show()
 # %%
 import networkx as nx
 
-tree_subset = (54, 171, 273, 186)
+tree_subset = (54, 171, 273, 186, 77)
 plant_subset = (197, 256, 66, 285, 88)
 
 flowers = (278, 197, 88, 166, 80, 66)
 
 idcs = tree_subset
+threshold = 0.8
 
 tree_l = label_subset(labels, idcs)
 ssm_l = ssm_subset(ssm, idcs)
 
 adjacency = ssm_l.copy()
-adjacency[adjacency < 0.7] = 0
+# adjacency[adjacency < 0.7] = 0
 
 g = nx.from_numpy_array(adjacency, create_using=nx.DiGraph)
 g_named = nx.relabel_nodes(g, {i: label for i, label in enumerate(tree_l)})
+g_named.remove_edges_from(
+    [(n1, n2) for n1, n2, w in g_named.edges(data="weight") if w < threshold]
+)
 g_trans = nx.transitive_reduction(g_named)
+nx.draw(g_named, with_labels=True)
+plt.figure()
 nx.draw(g_trans, with_labels=True)
 nx.write_graphml(g_trans, "graph.graphml")
 # %%
