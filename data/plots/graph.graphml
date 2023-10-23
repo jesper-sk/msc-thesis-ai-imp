@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d0" for="edge" attr.name="weight" attr.type="double"/>
+<graph edgedefault="directed"><node id="coconut.3"/>
+<node id="palm.3"/>
+<node id="tree.1"/>
+<node id="pine.1"/>
+<node id="elm.1"/>
+<edge source="palm.3" target="coconut.3">
+  <data key="d0">0.9905761002611972</data>
+</edge>
+<edge source="palm.3" target="elm.1">
+  <data key="d0">0.8907493183855215</data>
+</edge>
+<edge source="tree.1" target="coconut.3">
+  <data key="d0">0.9999280559076666</data>
+</edge>
+<edge source="tree.1" target="palm.3">
+  <data key="d0">0.9987301777592363</data>
+</edge>
+<edge source="tree.1" target="pine.1">
+  <data key="d0">0.9987089302260764</data>
+</edge>
+<edge source="tree.1" target="elm.1">
+  <data key="d0">0.9997913162848403</data>
+</edge>
+<edge source="pine.1" target="coconut.3">
+  <data key="d0">0.9916248929628185</data>
+</edge>
+<edge source="pine.1" target="elm.1">
+  <data key="d0">0.9584307927161244</data>
+</edge>
+</graph></graphml>

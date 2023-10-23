@@ -7,7 +7,7 @@ bookcorpus/plots/*
 coarsewsd/annotated/*
 coarsewsd/split/*
 
-vectorised
+vectorised/*
 
 wsdeval/WSD_Evaluation_Framework
 
