@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec
 
-with open("../data/ssm_labels.txt", "r") as file:
+with open("../data/bookcorpus/ssm_labels.txt", "r") as file:
     labels = [ln.strip() for ln in file.readlines()]
 
 
@@ -17,7 +17,7 @@ def format_label(label):
     return f"{parts[0]}.{int(parts[2])}"
 
 
-ssm = np.load("../data/ssm_ap0.58.npy")
+ssm = np.load("../data/bookcorpus/ssm_ap0.58.npy")
 with open("../data/bookcorpus/plots/all.csv", "r") as file:
     count_dict = {
         format_label(x[0]): int(x[1].strip())
@@ -508,4 +508,38 @@ import scipy.stats
 
 print(scipy.stats.pearsonr(mean_abstraction, the_counts))
 
-# %%
+# %% Transitivity check I
+
+
+for thresh in [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    A = ssm.copy()
+    A[A <= thresh] = 0
+    A[A > thresh] = 1
+    ax1.matshow(A, cmap="binary")
+    trans = A @ A
+    trans[A > 0] = 0
+    print(np.any(trans > 0))
+    ax2.matshow(trans, cmap="binary")
+    fig.show()
+
+# %% Transitivity chek II
+import itertools as it
+
+
+def transitive(X):
+    for i, j in it.product(range(302), range(302)):
+        if X[i, j]:
+            for k in np.argwhere(X[j]).flatten():
+                # we know X[j, k] == 1, so we need X[i, k] == 1 as well
+                if not X[i, k]:
+                    return False
+
+    return True
+
+
+for thresh in [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+    A = ssm.copy()
+    A[A <= thresh] = 0
+    A[A > thresh] = 1
+    print(thresh, transitive(A))
