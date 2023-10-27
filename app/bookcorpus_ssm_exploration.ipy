@@ -48,6 +48,18 @@ def delete_half(matrix):
     return ret
 
 
+mean_abstraction = ssm.mean(axis=1)
+
+
+def means(l):
+    if isinstance(l, int):
+        return mean_abstraction[l]
+    elif isinstance(l, str):
+        index = labels.index(l)
+        return mean_abstraction[index]
+    raise KeyError(l)
+
+
 def plot_ssm(indices, cmap="BrBG"):
     matrix_subset = ssm_subset(ssm, indices) if indices else ssm
     labels_subset = label_subset(labels, indices) if indices else labels
@@ -467,6 +479,7 @@ plant_subset = (197, 256, 66, 285, 88)
 flowers = (278, 197, 88, 166, 80, 66)
 
 idcs = tree_subset
+threshold = 0.9
 
 tree_l = label_subset(labels, idcs)
 ssm_l = ssm_subset(ssm, idcs)
