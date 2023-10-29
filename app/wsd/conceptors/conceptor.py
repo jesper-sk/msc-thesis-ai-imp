@@ -19,7 +19,7 @@ def deg_to_rad(deg: float):
 
 
 def rad_to_deg(rad: float):
-    return (rad * 360) / (2 * np.pi)
+    return rad * (180 / np.pi)
 
 
 def is_square_matrix(arr: NDArray[Any]):
@@ -82,7 +82,7 @@ class Conceptor(np.ndarray):
         if axis == 0:
             matrix = matrix.T
 
-        sample_count = matrix.shape[0]
+        sample_count = matrix.shape[1]
         return (matrix @ matrix.T) / sample_count
 
     @staticmethod
@@ -102,7 +102,7 @@ class Conceptor(np.ndarray):
             la.inv(correlation_matrix + aperture_matrix) @ correlation_matrix
         )
 
-        return Conceptor(conceptor_matrix, aperture)
+        return Conceptor(conceptor_matrix, aperture, correlation_matrix)
 
     @staticmethod
     def estimate_aperture(upper: float, tol: float = 1e-2):
@@ -110,12 +110,11 @@ class Conceptor(np.ndarray):
         return sqrt(1 - tol) / (sqrt(upper) * sqrt(tol))
 
     def __new__(
-        cls,
-        conceptor_matrix,
-        aperture: float | None = None,
+        cls, conceptor_matrix, aperture: float | None = None, correlation_matrix=None
     ):
         obj = np.asarray(conceptor_matrix).view(cls)  # Calls __array_finalize__
         obj.aperture = aperture
+        obj.correlation_matrix = correlation_matrix
 
         return obj
 
@@ -128,10 +127,20 @@ class Conceptor(np.ndarray):
             # We're in new-from-template context, we can take attributes from template
             self.order = obj_order
             self.aperture = getattr(obj, "aperture")
+            self.correlation_matrix = getattr(obj, "correlation_matrix")
         else:
             # We're in view casting context, we can infer order from shape
             assert is_square_matrix(obj)
             self.order = obj.shape[0]
+
+    @property
+    def R(self) -> Conceptor:
+        if hasattr(self, "correlation_matrix"):
+            return getattr(self, "correlation_matrix")
+        raise Exception("No correlation matrix available")
+
+    def R_ellipse(self):
+        return self._make_ellipse_vector(self.R)
 
     @property
     def inv(self) -> Conceptor:
@@ -185,6 +194,18 @@ class Conceptor(np.ndarray):
     def ellipsoid_sqrt(self, resolution: int = 100) -> np.ndarray:
         _, s, rotation = la.svd(self)
         return self._make_ellipsoid(np.sqrt(s), rotation, resolution)
+
+    def _make_ellipse_vector(self, x):
+        eigenvalues, eigenvectors = la.eig(x)
+        theta = np.linspace(0, 2 * np.pi, 1000)
+        ellipsis = (np.sqrt(eigenvalues[None, :]) * eigenvectors) @ [
+            np.sin(theta),
+            np.cos(theta),
+        ]
+        return ellipsis
+
+    def ellipse_vec(self):
+        return self._make_ellipse_vector(self)
 
     def ellipse(self) -> Ellipse:
         """https://en.wikipedia.org/wiki/Ellipsoid#As_a_quadric"""
