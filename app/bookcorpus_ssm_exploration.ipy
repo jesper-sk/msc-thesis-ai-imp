@@ -17,7 +17,7 @@ def format_label(label):
     return f"{parts[0]}.{int(parts[2])}"
 
 
-ssm = np.load("../data/bookcorpus/ssm_ap0.58.npy")
+ssm = np.load("../data/bookcorpus/ssm_new_ap0.58.npy")
 with open("../data/bookcorpus/plots/all.csv", "r") as file:
     count_dict = {
         format_label(x[0]): int(x[1].strip())
@@ -71,6 +71,12 @@ def plot_ssm(indices, cmap="BrBG"):
     plt.yticks(range(amount), labels_subset)
     plt.xticks(range(amount), labels_subset, rotation=-90)
     plt.show()
+
+
+def ssmv(fst, snd):
+    fsti = fst if isinstance(fst, int) else labels.index(fst)
+    sndi = snd if isinstance(snd, int) else labels.index(snd)
+    return ssm[fsti, sndi]
 
 
 def maximal_antichains(G, topo_order=None):
@@ -368,8 +374,8 @@ def trunc(s, length):
     return s[: length - 3] + "~" + s[-2:] if len(s) > length else s
 
 
-index_sets = [tree]  # [food, plant]
-section_sets = [tree_sections]  # [food_sections, plant_sections]
+index_sets = [food, plant]
+section_sets = [food_sections, plant_sections]
 
 assert len(index_sets) == len(section_sets)
 
@@ -478,8 +484,12 @@ plant_subset = (197, 256, 66, 285, 88)
 
 flowers = (278, 197, 88, 166, 80, 66)
 
-idcs = tree_subset
-threshold = 0.9
+planttreeflower = (256, 80, 273, 197, 88, 66, 54)
+
+fruitberry = (256, 80, 247, 27, 95, 162, 102)
+
+idcs = fruitberry
+threshold = 0.0  # planttreeflowe 0.05
 
 tree_l = label_subset(labels, idcs)
 ssm_l = ssm_subset(ssm, idcs)
@@ -496,7 +506,6 @@ g_trans = nx.transitive_reduction(g_named)
 nx.draw(g_named, with_labels=True)
 plt.figure()
 nx.draw(g_trans, with_labels=True)
-nx.write_graphml(g_trans, "graph.graphml")
 # %%
 import itertools as it
 
@@ -561,3 +570,88 @@ for thresh in [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
     A[A <= thresh] = 0
     A[A > thresh] = 1
     print(thresh, transitive(A))
+
+# %%
+
+all_counts = [count_dict[lab] for lab in labels]
+all_means = [means(lab) for lab in labels]
+
+plt.scatter(all_means, all_counts, c="black")
+plt.hlines(768, -1, 1, ls=":")
+plt.yscale("log")
+# %%
+fig, ax = plt.subplots(1, 1, figsize=(6 * 0.9, 4 * 0.9))
+fig.tight_layout()
+# ax.axvline(768, ls=":", c="gray")
+ax.axhline(0, ls=":", c="gray")
+ax.scatter(all_counts, all_means, c="black", s=5)
+ax.set_ylim([-1, 1])
+ax.set_xscale("log")
+ax.set_yticks([-1, -0.5, 0, 0.5, 1])
+# ax.text(800, -0.95, "$d_{BERT}$", size="small", c="gray")
+ax.set_xlabel("Synset occurrence count (log)")
+ax.set_ylabel("Average synset abstraction")
+fig.savefig("../data/plots/counts.pdf", bbox_inches="tight", pad_inches=0)
+
+
+#%%
+fig, ax = plt.subplots(1, 1, figsize=(6 * 0.9, 4 * 0.9))
+fig.tight_layout()
+# a1.axvline(768, ls=":", c="gray")
+ax.axhline(0, ls=":", c="gray")
+ax.scatter(all_counts, all_means, c="black", s=5)
+ax.set_ylim([-1, 1])
+# a1.set_xscale("log")
+ax.set_yticks([-1, -0.5, 0, 0a.5, 1])
+# a1.text(800, -.95, "$d_{BERT}$", size='small', c='gray')
+ax.set_xlabel("Synset occurrence count")
+ax.set_ylabel("Average synset abstraction")
+
+fig.savefig("../data/plots/counts1.pdf", bbox_inches="tight", pad_inches=0)
+
+# %%
+
+# buff = ["x;y;z;xy;yz;xz;sum;diff"]
+import itertools as it
+from math import factorial
+
+from tqdm import tqdm
+
+diffs = []
+
+failures = []
+
+minnorm = lambda x,y: min(x,y)
+lukasiewicz = lambda x,y: max(x+y-1, 0)
+prod = lambda x,y: x*y
+drastic = lambda x,y: min(x,y) if max(x,y) = 1
+
+ssmt = ssm.copy()
+ssmt[ssmt<0] = 0
+
+t = prod
+
+for x, y, z in tqdm(
+    it.combinations(range(302), 3),
+):
+    xy = ssmt[x, y]
+    yz = ssmt[y, z]
+    xz = ssmt[x, z]
+
+    if xz < t(xy, yz):
+        print("fail!", xy, yz, xz)
+        break
+    
+
+# with open("test.csv", "w") as file:
+#     file.write("\n".join(buff))
+
+# %%
+fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+fig.tight_layout()
+
+ax.hist(diffs, bins=30, color="black", rwidth=0.90)
+ax.set_xlabel("Value for $\succ(x,y)\ +\ \succ(y,z)\ -\ \succ(x,z)$")
+ax.set_ylabel("Count")
+
+# %%

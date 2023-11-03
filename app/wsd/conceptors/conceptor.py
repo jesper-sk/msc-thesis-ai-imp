@@ -50,6 +50,10 @@ def lissajous(a: float, b: float, delta_f: float, range: ArrayLike):
     return np.hstack((x[:, None], y[:, None]))
 
 
+def is_positive_definite(c: Conceptor) -> np.bool_:
+    return np.all(la.eigvals(c) > 0)
+
+
 @dataclass
 class Ellipse:
     semiaxis_x: float
