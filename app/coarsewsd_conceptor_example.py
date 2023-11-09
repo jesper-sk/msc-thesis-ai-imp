@@ -82,7 +82,7 @@ def weighted_eigsum(diff: np.ndarray):
     return eigs.sum() / len(eigs)
 
 
-def posneg_fraction(diff: Conceptor, tol=1e-3, do_print=True):
+def posneg_fraction(diff: Conceptor, tol=0.0, do_print=True):
     eigs = np.sort(np.linalg.eigvals(diff))
     where_neg = np.argwhere(eigs < -tol)
     where_pos = np.argwhere(eigs > tol)
@@ -228,7 +228,7 @@ plt.yscale("log")
 # %%
 plt.plot(sorted_eigvals(co_music - co_ship))
 print(f"len(emb_music): {len(emb_music)}; len(emb_ship): {len(emb_ship)}")
-posneg_fraction(co_music - co_ship)
+posneg_fraction(co_music - co_ship, tol=1e-5)
 
 
 # %%
@@ -279,3 +279,50 @@ x = sorted_eigvals(co_music - disj)
 plt.plot(x, color="red")
 plt.hlines(0, 0, len(x), linestyles="--")
 # %%
+"""PLOTS FOR SINGULAR VALUES RESULT"""
+tol = 1e-3
+f = 0.97
+
+musice = np.array(sorted_eigvals(co_music))
+fig, ax = plt.subplots(1, 1, figsize=(3 * f, 3 * f))
+zero_idcs = np.argwhere(np.isclose(musice, 0, atol=1e-3)).flatten()
+
+ax.axvline(idx := zero_idcs[-1] + 1, ls=":", c="black")
+ax.plot(musice, c="black")
+ax.set_xlim([0, 768])
+ax.set_xticks([0, idx, 768], ["0", f"N-{768-idx}", "$N$"])
+ax.set_yticks([0, 1])
+ax.set
+fig.savefig("../data/plots/eigval_music.pdf", bbox_inches="tight", pad_inches=0)
+# %%
+tol = 1e-3
+
+shipe = np.array(sorted_eigvals(co_ship))
+fig, ax = plt.subplots(1, 1, figsize=(3 * f, 3 * f))
+zero_idcs = np.argwhere(np.isclose(shipe, 0, atol=1e-3)).flatten()
+
+ax.axvline(idx := zero_idcs[-1] + 1, ls=":", c="black")
+ax.plot(shipe, c="black")
+ax.set_xlim([0, 768])
+ax.set_xticks([0, idx, 768], ["0", f"N - {768-idx}", "$N$"])
+ax.set_yticks([0, 1])
+
+fig.savefig("../data/plots/eigval_ship.pdf", bbox_inches="tight", pad_inches=0)
+
+# %%
+
+tol = 1e-3
+
+diffe = np.array(sorted_eigvals(co_music - co_ship))
+fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+zero_idcs = np.argwhere(np.isclose(diffe, 0, atol=1e-3)).flatten()
+
+ax.axvline(idx1 := zero_idcs[-1] + 1, ls=":", c="black")
+ax.axvline(idx2 := zero_idcs[0] - 1, ls=":", c="black")
+ax.plot(diffe, c="black")
+ax.set_xlim([0, 768])
+ax.set_ylim([-1, 1])
+ax.set_yticks([-1, 0, 1])
+ax.set_xticks([0, idx1, idx2, 768], ["0", f"$N-{768-idx1}$", f"$N-{idx2}$", "$N$"])
+
+fig.savefig("../data/plots/eigval_diff.pdf", bbox_inches="tight", pad_inches=0)
