@@ -11,6 +11,7 @@ from wsd.conceptors.conceptor import (
     Ellipse,
     angle_between_vectors,
     lissajous,
+    loewner,
 )
 from wsd.util.angle import rad_to_deg
 
@@ -21,6 +22,21 @@ def unit():
 
 def crosshair():
     return MEllipse((0, 0), 0.005, 0.005, ec="black", ls="-", fc="black")
+
+
+def conceptor(angle_deg, scalex, scaley, aperture=1):
+    points = lissajous(1, 2, 0.2, np.arange(0, 2 * np.pi + 0.1, 0.1)) * np.array(
+        [scalex, scaley]
+    )
+    angle = angle_deg * (np.pi / 180)
+    print(angle / np.pi)
+    rot = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
+    points = np.apply_along_axis(lambda s: rot @ s, 1, points)
+    c = Conceptor.from_state_matrix(points, aperture)
+    x, y = zip(*points)
+    plt.scatter(x, y, s=0)
+    plt.plot(*c.ellipse_vec())
+    return c
 
 
 # %%
@@ -281,3 +297,117 @@ fig.savefig("../data/plots/conceptor_disj.pdf", bbox_inches="tight", pad_inches=
 # %%
 
 alphas = np.linspace(0.0001, 10, 1000)
+
+
+# %%
+def prep(ax):
+    ax.set_aspect("equal")
+
+    ax.add_patch(unit())
+    ax.add_patch(crosshair())
+
+    ax.set_xlim([-1, 1])
+    ax.set_ylim([-1, 1])
+    ax.set_yticks([1, 0, -1])
+    ax.set_xticks([1, 0, -1])
+
+
+def conceptor(angle_deg, scalex, scaley, aperture=1):
+    points = lissajous(1, 2, 0.2, np.arange(0, 2 * np.pi + 0.1, 0.1)) * np.array(
+        [scalex, scaley]
+    )
+    angle = angle_deg * (np.pi / 180)
+    # print(angle / np.pi)
+    rot = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
+    points = np.apply_along_axis(lambda s: rot @ s, 1, points)
+    c = Conceptor.from_state_matrix(points, aperture)
+    # x, y = zip(*points)
+    # plt.scatter(x, y, s=0)
+    # plt.plot(*c.ellipse_vec())
+    return c
+
+
+green = "#268981"
+red = "#B17323"
+
+a = conceptor(34, 2, 0.3)
+b = conceptor(-80, 0.14, 0.6)
+
+low = loewner(a, b)
+print(low)
+if low == 1:
+    print("a ≥ b")
+elif low == -1:
+    print("a ≤ b")
+else:
+    print("a = b")
+# %%
+a = conceptor(34, 2, 0.3)
+b = conceptor(-80, 0.14, 0.6)
+
+low = loewner(a, b)
+if low == 1:
+    print("a ≥ b")
+elif low == -1:
+    print("a ≤ b")
+else:
+    print("a = b")
+
+fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+prep(ax)
+
+ax.plot(*a.ellipse_vec(), c=green, lw=2)
+ax.plot(*b.ellipse_vec(), c=red, lw=2)
+
+fig.savefig("../data/plots/low_a_geq_b.pdf")
+
+# %%
+a = conceptor(90, 0.3, 2)
+b = conceptor(-80, 2, 1)
+
+low = loewner(a, b)
+if low == 1:
+    print("a ≥ b")
+elif low == -1:
+    print("a ≤ b")
+else:
+    print("a = b")
+
+fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+prep(ax)
+
+ax.plot(*a.ellipse_vec(), c=green, lw=2)
+ax.plot(*b.ellipse_vec(), c=red, lw=2)
+
+fig.savefig("../data/plots/low_a_eq_b.pdf")
+
+# %%
+
+a = conceptor(223, 0.3, 2.5)
+b = conceptor(210, 1, 5)
+
+low = loewner(a, b)
+if low == 1:
+    print("a ≥ b")
+elif low == -1:
+    print("a ≤ b")
+else:
+    print("a = b")
+
+fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+prep(ax)
+
+ax.plot(*a.ellipse_vec(), c=green, lw=2)
+ax.plot(*b.ellipse_vec(), c=red, lw=2)
+
+fig.savefig("../data/plots/low_b_geq_a.pdf")
+
+# %%
+
+x = np.linspace(0, 150, 1000)
+y = x / (x + 1)
+dx = x[1] - x[0]
+dydx = np.gradient(y, dx)
+
+plt.plot(x, y)
+plt.plot(x, dydx)
