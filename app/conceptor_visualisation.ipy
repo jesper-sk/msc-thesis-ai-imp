@@ -148,7 +148,7 @@ fig, ax = plt.subplots(figsize=(3, 3))
 ax.set_aspect("equal")
 
 ax.scatter(x, y, c="grey", marker=".")
-ax.plot(crell[0, :], crell[1, :], c="black", lw=2)
+ax.plot(crell[0, :], crell[1, :], c="black", lw=2, ls="--")
 xmin, xmax = min(x) - 0.1, max(x) + 0.1
 ymin, ymax = min(y) - 0.1, max(y) + 0.1
 mn = min(xmin, ymin)
@@ -165,7 +165,7 @@ fig.savefig("../data/plots/conceptor_1.pdf", bbox_inches="tight", pad_inches=0)
 fig, ax = plt.subplots(figsize=(3, 3))
 ax.set_aspect("equal")
 
-ax.plot(*crell, c="grey", ls="--", lw=2)
+ax.plot(*crell, c="black", ls="--", lw=2)
 ax.plot(*cell, c="black", lw=2)
 ax.add_patch(unit())
 ax.add_patch(crosshair())
