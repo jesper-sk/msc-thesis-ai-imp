@@ -9,6 +9,7 @@ import itertools as it
 from math import sqrt
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.linalg as la
 from tqdm import tqdm
@@ -183,13 +184,40 @@ sorted_idcs = np.argsort(counts)
 sorted_counts = np.take_along_axis(np.asarray(counts), sorted_idcs, None)
 traces = [c.quota for c in concs]
 sorted_traces = np.take_along_axis(np.asarray(traces), sorted_idcs, None)
+
+# %%
+values = la.matrix_rank(concs, 1e-3, hermitian=True)
+sorted_values = np.take_along_axis(np.asarray(values), sorted_idcs, None)
+name = "rank"
+
+diff = sorted_counts - sorted_values
+
+# %%
+
+fig, ax = plt.subplots(1, 1, figsize=(6 * 0.9, 4 * 0.9))
+fig.tight_layout()
+ax.scatter(
+    sorted_counts[sorted_counts <= 768], diff[sorted_counts <= 768], c="black", s=5
+)
+ax.set_ylim([0, max(sorted_values) + 0.01])
+# ax.axvline(768, ls='--', c='gray')
+# ax.plot(range(768), ls=':', c='black')
+ax.set_xscale("log")
+ax.set_xlabel("Synset occurrence count (log)")
+ax.set_ylabel(name)
+ax.set_ylim(min(diff[sorted_counts <= 768]), max(diff[sorted_counts <= 768]))
+
+plt.show()
+
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(6 * 0.9, 4 * 0.9))
 fig.tight_layout()
 
 # ax.plot(sorted_counts, c='black', ls=':', label="Occurrence count")
-ax.plot(np.arange(768) / 768, ls=":", c="gray")
+ax.plot(np.arange(768) / 768, ls=":", c="black")
 ax.scatter(sorted_counts, sorted_traces, c="black", s=5)
+ax.axvline(768, c="gray", ls="--")
+ax.text(800, 0.005, "$d_{BERT}$", size="small", c="gray")
 ax.set_ylim([0, max(sorted_traces) + 0.01])
 ax.set_xscale("log")
 ax.set_xlabel("Synset occurrence count (log)")

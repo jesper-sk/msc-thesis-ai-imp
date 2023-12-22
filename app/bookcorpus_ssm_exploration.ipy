@@ -476,6 +476,12 @@ plt.show()
 
 # %%
 
+def plot_graph(G):
+    pos = nx.spring_layout(G)
+    nx.draw_networkx(G, pos, with_labels=True)
+    # labels = nx.get_edge_attributes(G, 'weight')
+    # nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)
+
 # %%
 import networkx as nx
 
@@ -484,12 +490,13 @@ plant_subset = (197, 256, 66, 285, 88)
 
 flowers = (278, 197, 88, 166, 80, 66)
 
-planttreeflower = (256, 80, 273, 197, 88, 66, 54)
+planttreeflower = (256, 80, 273, 197, 88, 66)
 
 fruitberry = (256, 80, 247, 27, 95, 162, 102)
 
-idcs = fruitberry
-threshold = 0.0  # planttreeflowe 0.05
+# idcs = tuple(set(idx for idx, count in enumerate(the_counts) if count >= 768).intersection(set(food + granimal + tree + plant)))
+idcs = tree_subset
+threshold = 0.01  # planttreeflowe 0.05
 
 tree_l = label_subset(labels, idcs)
 ssm_l = ssm_subset(ssm, idcs)
@@ -503,9 +510,26 @@ g_named.remove_edges_from(
     [(n1, n2) for n1, n2, w in g_named.edges(data="weight") if w < threshold]
 )
 g_trans = nx.transitive_reduction(g_named)
-nx.draw(g_named, with_labels=True)
-plt.figure()
-nx.draw(g_trans, with_labels=True)
+# plot_graph(g_named)
+# plt.figure()
+plt.figure(figsize=(20, 20))
+plot_graph(g_trans)
+for (fst, snd) in g_trans.edges():
+    print(f"{fst}-->{snd}: {ssmv(fst,snd):.2f}")
+
+#%%
+def sumstuff(fr, to, edges, current):
+    val = ssmv(fr, to)
+    current += val
+    print(f"{to},{val:.2f},{current:.2f}")
+    next_edges = [(nfr, nto) for (nfr, nto) in edges if nfr == to]
+    if len(next_edges) == 0:
+        return
+    nfr, nto = next_edges[0]
+    sumstuff(nfr, nto, edges, current)
+
+print("thing.4,0,0")
+sumstuff('thing.4', 'root.1', g_trans.edges(), 0)
 # %%
 import itertools as it
 
@@ -582,13 +606,13 @@ plt.yscale("log")
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(6 * 0.9, 4 * 0.9))
 fig.tight_layout()
-# ax.axvline(768, ls=":", c="gray")
+ax.axvline(768, ls=":", c="gray")
 ax.axhline(0, ls=":", c="gray")
 ax.scatter(all_counts, all_means, c="black", s=5)
 ax.set_ylim([-1, 1])
 ax.set_xscale("log")
 ax.set_yticks([-1, -0.5, 0, 0.5, 1])
-# ax.text(800, -0.95, "$d_{BERT}$", size="small", c="gray")
+ax.text(800, -0.95, "$d_{BERT}$", size="small", c="gray")
 ax.set_xlabel("Synset occurrence count (log)")
 ax.set_ylabel("Average synset abstraction")
 fig.savefig("../data/plots/counts.pdf", bbox_inches="tight", pad_inches=0)
@@ -597,13 +621,13 @@ fig.savefig("../data/plots/counts.pdf", bbox_inches="tight", pad_inches=0)
 #%%
 fig, ax = plt.subplots(1, 1, figsize=(6 * 0.9, 4 * 0.9))
 fig.tight_layout()
-# a1.axvline(768, ls=":", c="gray")
+ax.axvline(768, ls=":", c="gray")
 ax.axhline(0, ls=":", c="gray")
 ax.scatter(all_counts, all_means, c="black", s=5)
 ax.set_ylim([-1, 1])
 # a1.set_xscale("log")
-ax.set_yticks([-1, -0.5, 0, 0a.5, 1])
-# a1.text(800, -.95, "$d_{BERT}$", size='small', c='gray')
+ax.set_yticks([-1, -0.5, 0, 0.5, 1])
+ax.text(800, -.95, "$d_{BERT}$", size='small', c='gray')
 ax.set_xlabel("Synset occurrence count")
 ax.set_ylabel("Average synset abstraction")
 

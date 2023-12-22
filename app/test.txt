@@ -1,0 +1,1 @@
+I find that the correlation matrix and thus the conceptor of a state cloud built up of p < N occurrences has a rank k =< p. This in turn implies that a conceptor has exactly k nonzero singular values. 
