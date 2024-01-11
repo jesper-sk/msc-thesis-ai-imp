@@ -365,6 +365,18 @@ actual_tree = (
     166,
 )
 
+sel = (
+    77, # elm
+    98, # garden
+    151, # melon
+    95, # fruit
+    197, # plant
+    43, # cabbage
+    21, # banana
+    # 80, # entity
+    256
+)
+
 
 # %%
 plt.rcParams["font.size"] = 13  # 17
@@ -494,42 +506,45 @@ planttreeflower = (256, 80, 273, 197, 88, 66)
 
 fruitberry = (256, 80, 247, 27, 95, 162, 102)
 
-# idcs = tuple(set(idx for idx, count in enumerate(the_counts) if count >= 768).intersection(set(food + granimal + tree + plant)))
-idcs = tree_subset
-threshold = 0.01  # planttreeflowe 0.05
+idcs = sel
+# idcs = tree_subset
+threshold = 0.0  # planttreeflowe 0.05
 
 tree_l = label_subset(labels, idcs)
 ssm_l = ssm_subset(ssm, idcs)
 
-adjacency = ssm_l.copy()
-# adjacency[adjacency < 0.7] = 0
+for thresh in [0.3]:#[0.02, 0.08, 0.1, 0.3]:
 
-g = nx.from_numpy_array(adjacency, create_using=nx.DiGraph)
-g_named = nx.relabel_nodes(g, {i: label for i, label in enumerate(tree_l)})
-g_named.remove_edges_from(
-    [(n1, n2) for n1, n2, w in g_named.edges(data="weight") if w < threshold]
-)
-g_trans = nx.transitive_reduction(g_named)
-# plot_graph(g_named)
-# plt.figure()
-plt.figure(figsize=(20, 20))
-plot_graph(g_trans)
-for (fst, snd) in g_trans.edges():
-    print(f"{fst}-->{snd}: {ssmv(fst,snd):.2f}")
+    adjacency = ssm_l.copy()
+    # adjacency[adjacency < 0.7] = 0
+
+    g = nx.from_numpy_array(adjacency, create_using=nx.DiGraph)
+    g_named = nx.relabel_nodes(g, {i: label for i, label in enumerate(tree_l)})
+    g_named.remove_edges_from(
+        [(n1, n2) for n1, n2, w in g_named.edges(data="weight") if w < thresh]
+    )
+    g_trans = nx.transitive_reduction(g_named)
+    # plot_graph(g_named)
+    # plt.figure()
+    plt.figure(figsize=(20, 20))
+    plot_graph(g_trans)
+    print("\nt=%s" % thresh)
+    for (fst, snd) in g_trans.edges():
+        print(f"{fst}-->{snd}: {ssmv(fst,snd):.2f}")
 
 #%%
 def sumstuff(fr, to, edges, current):
     val = ssmv(fr, to)
     current += val
-    print(f"{to},{val:.2f},{current:.2f}")
+    print(f"{to},{val:.3E},{current:.2f},{count_dict[to]}")
     next_edges = [(nfr, nto) for (nfr, nto) in edges if nfr == to]
     if len(next_edges) == 0:
         return
     nfr, nto = next_edges[0]
     sumstuff(nfr, nto, edges, current)
 
-print("thing.4,0,0")
-sumstuff('thing.4', 'root.1', g_trans.edges(), 0)
+print("topographic_point.1,0,%s" % count_dict['topographic_point.1'])
+sumstuff('topographic_point.1', 'thing.3', g_trans.edges(), 0)
 # %%
 import itertools as it
 

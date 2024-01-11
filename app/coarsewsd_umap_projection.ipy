@@ -51,12 +51,59 @@ umap_emb = umap.UMAP().fit_transform(np.concatenate((embeddings_tr, embeddings_t
 plt.scatter(
     umap_emb[:, 0],
     umap_emb[:, 1],
-    c=[["red", "blue", "green", "purple"][x] for x in entries.target_class_ids],
+    c=[["red", "blue", "green", None][x] for x in entries.target_class_ids],
+    marker=".",
 )
 plt.gca().set_aspect("equal", "datalim")
 plt.title("UMAP projection of CWSD sentences 'chair'", fontsize=24)
 # Third-party imports
 
-# Third-party imports
-
 # %%
+
+from wsd.conceptors import Conceptor
+
+aperture = 0.5
+
+embs = {
+    class_id: [
+        emb for emb, idx in zip(umap_emb, entries.target_class_ids) if idx == class_id
+    ]
+    for class_id in range(3)
+}
+concs = {
+    class_id: Conceptor.from_state_matrix(emb, aperture=aperture)
+    for class_id, emb in embs.items()
+}
+origins = {
+    class_id: np.mean(emb, axis=0).reshape((2, 1)) for class_id, emb in embs.items()
+}
+fullconc = Conceptor.from_state_matrix(umap_emb, aperture=aperture)
+cols = ["red", "blue", "green"]
+synsets = ["bow#ship", "bow#arrow", "bow#violin"]
+fig, (ax, ay) = plt.subplots(1, 2, figsize=(10, 5))
+ax.axis("equal")
+
+for x in range(3):
+    embs = [emb for emb, idx in zip(umap_emb, entries.target_class_ids) if idx == x]
+    ax.scatter(*zip(*embs), c=cols[x], label=synsets[x], alpha=0.8, edgecolors="none")
+    ay.plot(*(concs[x].ellipse_vec()), c=cols[x])
+
+ay.plot(*fullconc.ellipse_vec(), c="black")
+
+ax.legend()
+ax.set_yticks([])
+ax.set_xticks([])
+ay.set_yticks([])
+ay.set_xticks([])
+fig.savefig("../data/plots/cwsd_umap.pdf", bbox_inches="tight", pad_inches=0)
+# %%
+
+fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+ax.scatter(
+    umap_emb[:, 0],
+    umap_emb[:, 1],
+    c=[["red", "blue", "green", None][x] for x in entries.target_class_ids],
+)
+ax.set_yticks([])
+ax.set_xticks([])
+ax.legend(["foo", "bar", "baz"])
