@@ -23,6 +23,8 @@ def embeddings(stem: str):
 
 conceptor = Conceptor.from_state_matrix
 
+foo = posneg_magnitude_fraction
+
 
 def plot_ellipses(ell: Ellipse | Conceptor, *ells: Ellipse | Conceptor):
     fig, ax = plt.subplots()
@@ -326,3 +328,19 @@ ax.set_yticks([-1, 0, 1])
 ax.set_xticks([0, idx1, idx2, 768], ["0", f"$N-{768-idx1}$", f"$N-{idx2}$", "$N$"])
 
 fig.savefig("../data/plots/eigval_diff.pdf", bbox_inches="tight", pad_inches=0)
+
+
+# %% Assert antisymmetry
+
+print("Generating conceptors...")
+conceptors = [
+    Conceptor.from_state_matrix(embeddings(sense.stem.strip()), 1) for sense in senses
+]
+
+from itertools import combinations
+
+for x, y in combinations(conceptors, 2):
+    ltr = foo(x, y)
+    rtl = foo(y, x)
+
+    print(f"{ltr + rtl:.5f}")

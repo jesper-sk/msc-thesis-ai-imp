@@ -389,6 +389,9 @@ def trunc(s, length):
 index_sets = [food, plant]
 section_sets = [food_sections, plant_sections]
 
+index_sets = [tree]
+section_sets = [tree_sections]
+
 assert len(index_sets) == len(section_sets)
 
 num_synsets = list(map(len, index_sets))
@@ -476,13 +479,13 @@ cbar = f.colorbar(
 cbar.ax.set_xticks(
     [-1, 0, 1],
     [
-        "-1 \n($\\it{y}$ is less abstract than $\\it{x}$)",
+        "-1 \n(→ is less abstract than ↓)",
         "0\n(no abstraction)",
-        "1\n($\\it{y}$ is more abstract than $\\it{x}$)",
+        "1\n(→ is more abstract than ↓)",
     ],
 )
 
-f.savefig("ssms.pdf", bbox_inches="tight")
+f.savefig("ssms_tree.pdf", bbox_inches="tight")
 
 plt.show()
 
